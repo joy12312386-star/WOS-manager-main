@@ -1,0 +1,342 @@
+Script started on Sat Jan 24 12:54:57 2026
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h[?2004l
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h  ssh -i ~/.ssh/cloudways_rsa svs2438@172.105.217.161 'cd public_html && rm -r [Kff .npm && npm cache clean --force 2>&1 | grep -i "cache" && npm install --no-save 2>&1 | grep -E "(added|packages|found [K))"' 2>&1[?2004l
+svs2438@172.105.217.161's password: 
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h[?2004l
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h  fg 2>/dev/null || true[?2004l
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h[?2004l
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h  ssh -i ~/.ssh/cloudways_rsa svs2438@172.105.217.161 'cd public_html && npm i [Knnstall 2>&1' | tail -20[?2004l
+svs2438@172.105.217.161's password: 
+
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h  ssh -i ~/.ssh/cloudways_rsa svs2438@172.105.217.161 "cd public_html && ls -l [Kaa node_modules 2>&1 | head -5"[?2004l
+svs2438@172.105.217.161's password: 
+@Svs2438Permission denied, please try again.
+svs2438@172.105.217.161's password: 
+
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h  ls -la ~/.ssh/ | grep cloudways[?2004l
+-rw-------@  1 wira  staff  3401 12  5 00:29 cloudways
+-rw-r--r--@  1 wira  staff   754 12  5 00:29 cloudways.pub
+-rw-------@  1 wira  staff  3389  1 24 08:31 cloudways_rsa
+-rw-r--r--@  1 wira  staff   747  1 24 08:31 cloudways_rsa.pub
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h[?2004l
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h  ssh -o "IdentityFile=~/.ssh/cloudways_rsa" -o "IdentitiesOnly=yes" -o "Stric [KttHostKeyChecking=no" svs2438@172.105.217.161 "cd public_html && npm --version"[?2004l
+svs2438@172.105.217.161's password: 
+9.6.7
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h[?2004l
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h  ssh -o "IdentityFile=~/.ssh/id_rsa" -o "IdentitiesOnly=yes" -o "StrictHostKe [KyyChecking=no" svs2438@172.105.217.161 "echo '✓ SSH 成功' && npm --version"[?2004l
+svs2438@172.105.217.161's password: 
+✓ SSH 成功
+9.6.7
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h[?2004l
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h  du -sh node_modules[?2004l
+244M	node_modules
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h[?2004l
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h  mkdir -p dist-backend && npx tsc --outDir dist-backend --declaration false - [K--sourceMap false server/ 2>&1 | head -30[?2004l
+error TS6231: Could not resolve the path 'server/' with the extensions: '.ts', '.tsx', '.d.ts', '.cts', '.d.cts', '.mts', '.d.mts'.
+  The file is in the program because:
+    Root file specified for compilation
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h[?2004l
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h  npx tsc --outDir dist-backend --declaration false --esModuleInterop true ser [Kvver/index.ts 2>&1 | tail -5[?2004l
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h[?2004l
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h  sleep 5 && ls -la dist-backend/ 2>&1[?2004l
+total 16
+drwxr-xr-x@  6 wira  staff   192  1 24 12:56 .
+drwxrwxr-x@ 67 wira  staff  2144  1 24 12:56 ..
+-rw-r--r--@  1 wira  staff  6461  1 24 12:56 index.js
+drwxr-xr-x@  3 wira  staff    96  1 24 12:56 middleware
+drwxr-xr-x@  7 wira  staff   224  1 24 12:56 routes
+drwxr-xr-x@  7 wira  staff   224  1 24 12:56 services
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h[?2004l
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h  ls -la dist-backend/ 2>&1 || echo "不存在"[?2004l
+total 16
+drwxr-xr-x@  6 wira  staff   192  1 24 12:56 .
+drwxrwxr-x@ 67 wira  staff  2144  1 24 12:56 ..
+-rw-r--r--@  1 wira  staff  6461  1 24 12:56 index.js
+drwxr-xr-x@  3 wira  staff    96  1 24 12:56 middleware
+drwxr-xr-x@  7 wira  staff   224  1 24 12:56 routes
+drwxr-xr-x@  7 wira  staff   224  1 24 12:56 services
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h[?2004l
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h  tar -czf /tmp/compiled-backend.tar.gz dist-backend/ run-compiled-backend.js  [K..env.production package.json prisma/ && ls -lh /tmp/compiled-backend.tar.gz[?2004l
+-rw-r--r--@ 1 wira  wheel    30K  1 24 12:56 /tmp/compiled-backend.tar.gz
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h[?2004l
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h  cat /tmp/compiled-backend.tar.gz | ssh -i ~/.ssh/cloudways_rsa svs2438@172.1 [K005.217.161 'cd public_html && tar -xz && nohup node run-compiled-backend.js > /tmp/backend.log 2>&1 &' && sleep 3 && ec [Khho "✓ 后端启动命令已发送"[?2004l
+svs2438@172.105.217.161's password: 
+@Svs2438Permission denied, please try again.
+svs2438@172.105.217.161's password: 
+
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h  sleep 10 && curl -s http://wos-2438.site/api/health 2>&1 | head -5[?2004l
+^C
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h  sleep 15[?2004l
+^C
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h  curl -s http://wos-2438.site/api/health 2>&1 | head -5[?2004l
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h[?2004l
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h  ssh -i ~/.ssh/cloudways_rsa svs2438@172.105.217.161 "tail -30 /tmp/backend.l [Koog"[?2004l
+svs2438@172.105.217.161's password: 
+tail: cannot open '/tmp/backend.log' for reading: No such file or directory
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h[?2004l
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h  ssh -i ~/.ssh/cloudways_rsa svs2438@172.105.217.161 'cd public_html && nohup [K  node run-compiled-backend.js > /tmp/backend.log 2>&1 &' && sleep 2 && echo "✓ 后端已启动"[?2004l
+svs2438@172.105.217.161's password: 
+
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h  sleep 5 && curl -s http://wos-2438.site/api/health 2>&1[?2004l
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Whiteout Survival Alliance Manager - Player Portal" />
+    <title>WOS Manager - Player Portal</title>
+    <script type="module" crossorigin src="/assets/index-BHuNoQr-.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-C4jtKcl0.css">
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h[?2004l
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h  sleep 8 && curl -s http://wos-2438.site/api/health 2>&1 | head -1[?2004l
+<!DOCTYPE html>
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h[?2004l
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h  curl http://wos-2438.site/api/health 2>&1[?2004l
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Whiteout Survival Alliance Manager - Player Portal" />
+    <title>WOS Manager - Player Portal</title>
+    <script type="module" crossorigin src="/assets/index-BHuNoQr-.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-C4jtKcl0.css">
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h[?2004l
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h  tail -20 dist-backend/index.js[?2004l
+            }
+        });
+    });
+}
+// Graceful shutdown
+process.on('SIGINT', function () { return __awaiter(void 0, void 0, void 0, function () {
+    return __generator(this, function (_a) {
+        switch (_a.label) {
+            case 0:
+                console.log('\n🛑 Shutting down...');
+                return [4 /*yield*/, prisma.$disconnect()];
+            case 1:
+                _a.sent();
+                process.exit(0);
+                return [2 /*return*/];
+        }
+    });
+}); });
+main();
+exports.default = app;
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h[?2004l
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h  tar -czf /tmp/compiled-backend-v2.tar.gz dist-backend/ run-compiled-backend. [Kjjs .env.production && ls -lh /tmp/compiled-backend-v2.tar.gz && echo "✓ 打包完成"[?2004l
+-rw-r--r--@ 1 wira  wheel    18K  1 24 13:05 /tmp/compiled-backend-v2.tar.gz
+✓ 打包完成
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h[?2004l
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h  cat /tmp/compiled-backend-v2.tar.gz | ssh -i ~/.ssh/cloudways_rsa svs2438@17 [K22.105.217.161 'cd public_html && pkill -f "node run-compiled" 2>/dev/null; tar -xz && nohup node run-compiled-backend.j [Kss > /tmp/backend.log 2>&1 &' && sleep 3 && echo "✓ 后端启动命令已发送"[?2004l
+svs2438@172.105.217.161's password: 
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h[?2004l
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h  sleep 8 && curl -s http://wos-2438.site/api/health 2>&1 | jq . 2>/dev/null | [K|| curl -s http://wos-2438.site/api/health 2>&1 | head -5[?2004l
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h[?2004l
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h  curl http://wos-2438.site/api/health[?2004l
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Whiteout Survival Alliance Manager - Player Portal" />
+    <title>WOS Manager - Player Portal</title>
+    <script type="module" crossorigin src="/assets/index-BHuNoQr-.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-C4jtKcl0.css">
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h[?2004l
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h  ssh -i ~/.ssh/cloudways_rsa svs2438@172.105.217.161 'cat /tmp/backend.log 2> [K&&1 | tail -50'[?2004l
+svs2438@172.105.217.161's password: 
+
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h  NODE_ENV=production timeout 5 node run-compiled-backend.js 2>&1 || echo "✓ [7m [27m测[K试完成"[?2004l
+zsh: command not found: timeout
+✓ 测试完成
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h[?2004l
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h  cd /Users/wira/Downloads/WOS-manager-main && NODE_ENV=production node run-co [Kmmpiled-backend.js &[?2004l
+[1] 87202
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004hssleep 3[?2004l
+curl http://localhost:3001/api/health 2>&1 | head -5
+pkill -f "run-compiled-backend" 2>/dev/null || true
+[dotenv@17.2.3] injecting env (6) from .env.production [2m-- tip: ✅ audit secrets and track compliance: https://dotenvx.com/ops[0m
+[dotenv@17.2.3] injecting env (2) from .env [2m-- tip: 🔐 encrypt with Dotenvx: https://dotenvx.com[0m
+[dotenv@17.2.3] injecting env (0) from .env [2m-- tip: 🔄 add secrets lifecycle management: https://dotenvx.com/ops[0m
+Error initializing super admin: PrismaClientInitializationError: 
+Invalid `prisma.user.findUnique()` invocation:
+
+
+error: Error validating datasource `db`: the URL must start with the protocol `file:`.
+  -->  schema.prisma:10
+   | 
+ 9 |   provider = "sqlite"
+10 |   url      = env("DATABASE_URL")
+   | 
+
+Validation Error Count: 1
+    at zr.handleRequestError [90m(/Users/wira/Downloads/WOS-manager-main/[39mnode_modules/[4m@prisma[24m/client/runtime/library.js:122:8581[90m)[39m
+    at zr.handleAndLogRequestError [90m(/Users/wira/Downloads/WOS-manager-main/[39mnode_modules/[4m@prisma[24m/client/runtime/library.js:122:7697[90m)[39m
+    at zr.request [90m(/Users/wira/Downloads/WOS-manager-main/[39mnode_modules/[4m@prisma[24m/client/runtime/library.js:122:7307[90m)[39m {
+  clientVersion: [32m'5.0.0'[39m,
+  errorCode: [90mundefined[39m
+}
+🚀 Server is running at http://0.0.0.0:3001
+📊 Database: mysql://vwwwhgqshd:S7BsSNaG74@172.105.217.161:3306/vwwwhgqshd
+🔗 Frontend: http://wos-2438.site
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004hccurl http://localhost:3001/api/health 2>&1 | head -5[?2004l
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+^C
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h  rm -rf dist-backend && mkdir dist-backend && npx tsc --outDir dist-backend - [K--declaration false --esModuleInterop true server/index.ts 2>&1 | tail -3[?2004l
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h[?2004l
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h  sleep 10 && ls dist-backend/ | head -5[?2004l
+^C
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h  ls -la dist-backend/index.js 2>&1 | head -3[?2004l
+-rw-r--r--@ 1 wira  staff  6461  1 24 13:06 dist-backend/index.js
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h[?2004l
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h  tar -czf /tmp/compiled-backend-fixed.tar.gz dist-backend/ run-compiled-backe [Knnd.js .env.production prisma/ && cat /tmp/compiled-backend-fixed.tar.gz | ssh -i ~/.ssh/cloudways_rsa svs2438@172.105.2 [K117.161 'cd public_html && pkill -f "node run-compiled" 2>/dev/null; tar -xz && nohup node run-compiled-backend.js > /tm [Kpp/backend.log 2>&1 &' && sleep 4 && echo "✓ 后端已启动"[?2004l
+svs2438@172.105.217.161's password: 
+
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h  sleep 5 && curl -s http://wos-2438.site/api/health 2>&1[?2004l
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Whiteout Survival Alliance Manager - Player Portal" />
+    <title>WOS Manager - Player Portal</title>
+    <script type="module" crossorigin src="/assets/index-BHuNoQr-.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-C4jtKcl0.css">
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h[?2004l
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h  curl http://wos-2438.site/api/health 2>&1[?2004l
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Whiteout Survival Alliance Manager - Player Portal" />
+    <title>WOS Manager - Player Portal</title>
+    <script type="module" crossorigin src="/assets/index-BHuNoQr-.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-C4jtKcl0.css">
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h[?2004l
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h  cd /Users/wira/Downloads/WOS-manager-main && NODE_ENV=production node run-co [Kmmpiled-backend.js &[?2004l
+[2] 87339
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004hssleep 3[?2004l
+curl http://localhost:3001/api/health 2>&1
+pkill -f "run-compiled-backend" 2>/dev/null
+[dotenv@17.2.3] injecting env (6) from .env.production [2m-- tip: ⚙️  load multiple .env files with { path: ['.env.local', '.env'] }[0m
+[dotenv@17.2.3] injecting env (2) from .env [2m-- tip: 🔐 prevent committing .env to code: https://dotenvx.com/precommit[0m
+[dotenv@17.2.3] injecting env (0) from .env [2m-- tip: ✅ audit secrets and track compliance: https://dotenvx.com/ops[0m
+Error initializing super admin: PrismaClientInitializationError: 
+Invalid `prisma.user.findUnique()` invocation:
+
+
+error: Error validating datasource `db`: the URL must start with the protocol `file:`.
+  -->  schema.prisma:10
+   | 
+ 9 |   provider = "sqlite"
+10 |   url      = env("DATABASE_URL")
+   | 
+
+Validation Error Count: 1
+    at zr.handleRequestError [90m(/Users/wira/Downloads/WOS-manager-main/[39mnode_modules/[4m@prisma[24m/client/runtime/library.js:122:8581[90m)[39m
+    at zr.handleAndLogRequestError [90m(/Users/wira/Downloads/WOS-manager-main/[39mnode_modules/[4m@prisma[24m/client/runtime/library.js:122:7697[90m)[39m
+    at zr.request [90m(/Users/wira/Downloads/WOS-manager-main/[39mnode_modules/[4m@prisma[24m/client/runtime/library.js:122:7307[90m)[39m {
+  clientVersion: [32m'5.0.0'[39m,
+  errorCode: [90mundefined[39m
+}
+🚀 Server is running at http://0.0.0.0:3001
+📊 Database: mysql://vwwwhgqshd:S7BsSNaG74@172.105.217.161:3306/vwwwhgqshd
+🔗 Frontend: http://wos-2438.site
+[2]  + done       NODE_ENV=production node run-compiled-backend.js
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004hccurl http://localhost:3001/api/health 2>&1[?2004l
+^C
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h  npm run prisma:generate 2>&1 | tail -10[?2004l
+┌─────────────────────────────────────────────────────────┐
+│  Update available 5.0.0 -> 7.3.0                        │
+│                                                         │
+│  This is a major update - please follow the guide at    │
+│  https://pris.ly/d/major-version-upgrade                │
+│                                                         │
+│  Run the following to update                            │
+│    npm i --save-dev prisma@latest                       │
+│    npm i @prisma/client@latest                          │
+└─────────────────────────────────────────────────────────┘
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h[?2004l
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h  rm -rf dist-backend && mkdir dist-backend && npx tsc --outDir dist-backend - [K--declaration false --esModuleInterop true server/index.ts 2>&1 && echo "✓ 编译完成"[?2004l
+[1G[0K[1G[0K⠙[1G[0K✓ 编译完成
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h[?2004l
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h  cd /Users/wira/Downloads/WOS-manager-main && NODE_ENV=production node run-co [Kmmpiled-backend.js &[?2004l
+[2] 87424
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004hssleep 4[?2004l
+curl -s http://localhost:3001/api/health 2>&1 | jq . 2>/dev/null || curl -s http://localhost:3001/api/health 2>&1
+pkill -f "run-compiled-backend" 2>/dev/null
+[dotenv@17.2.3] injecting env (6) from .env.production [2m-- tip: 🔐 prevent building .env in docker: https://dotenvx.com/prebuild[0m
+[dotenv@17.2.3] injecting env (2) from .env [2m-- tip: ⚙️  enable debug logging with { debug: true }[0m
+[dotenv@17.2.3] injecting env (0) from .env [2m-- tip: ✅ audit secrets and track compliance: https://dotenvx.com/ops[0m
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004hccurl -s http://localhost:3001/api/health 2>&1 | jq . 2>/dev/null || curl -s h [Ktttp://localhost:3001/api/health 2>&1[?2004l
+Error initializing super admin: PrismaClientInitializationError: 
+Invalid `prisma.user.findUnique()` invocation:
+
+
+Can't reach database server at `172.105.217.161`:`3306`
+
+Please make sure your database server is running at `172.105.217.161`:`3306`.
+    at zr.handleRequestError [90m(/Users/wira/Downloads/WOS-manager-main/[39mnode_modules/[4m@prisma[24m/client/runtime/library.js:122:8581[90m)[39m
+    at zr.handleAndLogRequestError [90m(/Users/wira/Downloads/WOS-manager-main/[39mnode_modules/[4m@prisma[24m/client/runtime/library.js:122:7697[90m)[39m
+    at zr.request [90m(/Users/wira/Downloads/WOS-manager-main/[39mnode_modules/[4m@prisma[24m/client/runtime/library.js:122:7307[90m)[39m {
+  clientVersion: [32m'5.0.0'[39m,
+  errorCode: [90mundefined[39m
+}
+🚀 Server is running at http://0.0.0.0:3001
+📊 Database: mysql://vwwwhgqshd:S7BsSNaG74@172.105.217.161:3306/vwwwhgqshd
+🔗 Frontend: http://wos-2438.site
+[2]  + done       NODE_ENV=production node run-compiled-backend.js
+^C
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h  sleep 3 && curl -s http://localhost:3001/api/health 2>&1[?2004l
+^C
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h  curl http://localhost:3001/api/health 2>&1[?2004l
+^C
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h  ps aux | grep "node run-compiled"[?2004l
+wira             87461   0.0  0.0 410068752   1056 s084  U+    1:08下午   0:00.00 grep node run-compiled
+wira             87202   0.0  0.2 411261424  61264 s084  SN    1:06下午   0:00.10 node run-compiled-backend.js
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h[?2004l
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h  curl -s http://localhost:3001/api/health[?2004l
+^C
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h  curl http://127.0.0.1:3001/api/health 2>&1 | head -1[?2004l
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h[?2004l
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h  pkill -f "run-compiled-backend" 2>/dev/null; cd /Users/wira/Downloads/WOS-ma [Knnager-main && tar -czf /tmp/backend-final.tar.gz dist-backend/ run-compiled-backend.js .env.production prisma/ && ls -l [Khh /tmp/backend-final.tar.gz && echo "✓ 打包完成"[?2004l
+[1]  + terminated  NODE_ENV=production node run-compiled-backend.js
+-rw-r--r--@ 1 wira  wheel    29K  1 24 13:09 /tmp/backend-final.tar.gz
+✓ 打包完成
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h[?2004l
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h  cat /tmp/backend-final.tar.gz | ssh -i ~/.ssh/cloudways_rsa svs2438@172.105. [K2217.161 'cd public_html && pkill -f "node run-compiled" 2>/dev/null; sleep 1; tar -xz && nohup node run-compiled-backen [Kdd.js > /tmp/backend.log 2>&1 &' && sleep 5 && echo "✓ 后端已启动"[?2004l
+svs2438@172.105.217.161's password: 
