@@ -10,8 +10,8 @@ if (strpos($path, '/api/') === 0) {
     $body = file_get_contents('php://input');
     $query_string = $_SERVER['QUERY_STRING'] ?? '';
     
-    // 后端 API 地址
-    $backend_url = 'http://localhost:3001' . $path;
+    // 后端 API 地址（使用 127.0.0.1 而不是 localhost）
+    $backend_url = 'http://127.0.0.1:3001' . $path;
     if ($query_string) {
         $backend_url .= '?' . $query_string;
     }
