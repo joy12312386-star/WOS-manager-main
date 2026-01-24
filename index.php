@@ -56,7 +56,7 @@ if (strpos($path, '/api/') === 0) {
     // 如果连接被拒绝，尝试启动后端
     if (strpos($curl_error, 'Connection refused') !== false || $http_code == 0) {
         // 尝试启动后端
-        $start_cmd = 'cd /home/996734.cloudwaysapps.com/vwvwhgqshd && NODE_ENV=production nohup node -r tsx/cjs server/index.ts > backend.log 2>&1 &';
+        $start_cmd = 'cd /home/996734.cloudwaysapps.com/vwvwhgqshd && NODE_ENV=production nohup npm run dev:server > backend.log 2>&1 &';
         shell_exec($start_cmd);
         
         // 等待后端启动
