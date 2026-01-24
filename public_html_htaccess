@@ -1,0 +1,20 @@
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+
+  # 允许直接访问真实文件和目录
+  RewriteCond %{REQUEST_FILENAME} -f [OR]
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteRule ^ - [L]
+
+  # API 请求转给 api.php
+  RewriteRule ^api/(.*)$ api.php [L,QSA]
+
+  # 所有其他请求转给 index.php（用于前端路由）
+  RewriteRule ^(.*)$ index.php [L,QSA]
+</IfModule>
+
+# 允许访问静态资源文件
+<FilesMatch "\.(js|css|svg|png|jpg|jpeg|gif|ico|woff|woff2|ttf|eot)$">
+  Header set Cache-Control "max-age=31536000, public"
+</FilesMatch>

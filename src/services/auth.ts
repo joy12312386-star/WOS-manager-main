@@ -1,4 +1,7 @@
-const API_URL = 'http://localhost:3001/api';
+// API endpoint - use relative path for production, localhost for development
+const API_URL = typeof window !== 'undefined' && window.location.hostname === 'localhost'
+  ? 'http://localhost:3001/api'
+  : '/api';
 const TOKEN_KEY = 'wos_token';
 const USER_KEY = 'wos_user';
 
