@@ -16,7 +16,7 @@ dotenv.config();
 
 const app: Express = express();
 const prisma = new PrismaClient();
-const PORT = process.env.SERVER_PORT || 3001;
+const PORT = parseInt(process.env.SERVER_PORT || process.env.PORT || '3001', 10);
 
 // Middleware
 app.use(
@@ -59,8 +59,9 @@ async function main() {
     // Initialize super admin
     await UserService.initializeSuperAdmin();
 
-    app.listen(PORT, () => {
-      console.log(`🚀 Server is running at http://localhost:${PORT}`);
+    const HOST = process.env.HOST || 'localhost';
+    app.listen(PORT, HOST, () => {
+      console.log(`🚀 Server is running at http://${HOST}:${PORT}`);
       console.log(`📊 Database: ${process.env.DATABASE_URL}`);
       console.log(`🔗 Frontend: ${process.env.FRONTEND_URL}`);
     });
