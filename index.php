@@ -4,8 +4,18 @@
  * 如果后端未运行，此脚本会尝试启动它
  */
 
+// 获取原始请求路径
+// 从 REQUEST_URI 中提取真实路径
 $request_uri = $_SERVER['REQUEST_URI'];
 $path = parse_url($request_uri, PHP_URL_PATH);
+
+// 处理直接访问 .php 文件的情况
+// 如果访问 /test-php.php、/diagnostic.php 等，直接包含文件
+$script_name = basename($path);
+if (in_array($script_name, ['diagnostic.php', 'test-php.php']) && file_exists(__DIR__ . '/' . $script_name)) {
+    include __DIR__ . '/' . $script_name;
+    exit;
+}
 
 // ===== 处理 API 请求 =====
 if (strpos($path, '/api/') === 0) {
