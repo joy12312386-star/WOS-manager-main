@@ -3,18 +3,21 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 export class SubmissionService {
-  // 檢查是否已有該使用者、該星期幾的報名
-  static async checkExistingSubmission(userId: string, dayKey: string): Promise<{ exists: boolean; submissionId?: string }> {
+  // 檢查是否已有該使用者、該星期幾、該場次的報名
+  static async checkExistingSubmission(userId: string, dayKey: string, eventDate?: string): Promise<{ exists: boolean; submissionId?: string }> {
     // 取得該使用者所有報名
     const submissions = await prisma.timeslotSubmission.findMany({
       where: { userId },
     });
     
-    // 檢查是否有相同星期幾的報名
+    // 檢查是否有相同星期幾且相同場次的報名
     for (const submission of submissions) {
       const slots = JSON.parse(submission.slotsData);
       if (slots[dayKey] && slots[dayKey].checked) {
-        return { exists: true, submissionId: submission.id };
+        // 如果 eventDate 相同（或都為 null），才視為重複報名
+        if (submission.eventDate === eventDate) {
+          return { exists: true, submissionId: submission.id };
+        }
       }
     }
     
@@ -33,11 +36,11 @@ export class SubmissionService {
       slots: any;
     }
   ) {
-    // 檢查該使用者是否已有相同星期幾的報名
+    // 檢查該使用者是否已有相同星期幾且相同場次的報名
     const dayKeys = Object.keys(data.slots).filter(key => data.slots[key]?.checked);
     
     for (const dayKey of dayKeys) {
-      const existing = await this.checkExistingSubmission(userId, dayKey);
+      const existing = await this.checkExistingSubmission(userId, dayKey, data.eventDate);
       if (existing.exists) {
         const dayNames: Record<string, string> = {
           monday: '週一',
@@ -48,7 +51,7 @@ export class SubmissionService {
           saturday: '週六',
           sunday: '週日'
         };
-        throw new Error(`您已經報名過${dayNames[dayKey] || dayKey}，請使用編輯功能修改現有報名`);
+        throw new Error(`您已經在${data.eventDate || '本場次'}報名過${dayNames[dayKey] || dayKey}，請使用編輯功能修改現有報名`);
       }
     }
     
