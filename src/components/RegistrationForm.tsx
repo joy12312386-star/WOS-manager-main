@@ -561,22 +561,8 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ user, player
       
       setSubmissions(userSubmissions);
       
-      // 如果有報名資料，自動進入編輯模式
-      if (userSubmissions.length > 0) {
-        // 自動載入最新報名資料以便編輯
-        const latestSubmission = userSubmissions[0];
-        setEditingId(latestSubmission.id);
-        setFormData({
-          gameId: latestSubmission.gameId,
-          playerName: latestSubmission.playerName,
-          alliance: latestSubmission.alliance,
-          slots: {
-            tuesday: cloneSlot(latestSubmission.slots?.tuesday),
-            thursday: cloneSlot(latestSubmission.slots?.thursday),
-            friday: cloneSlot(latestSubmission.slots?.friday)
-          }
-        });
-      }
+      // 不自動載入編輯模式 - 讓用戶在 SVS 模式中明確選擇要編輯的活動
+      // 這樣可以防止舊活動的報名資料被自動帶入新活動
     } catch (error) {
       console.error('❌ loadSubmissions 錯誤:', error);
       setSubmissions([]);
@@ -1010,9 +996,10 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ user, player
 
   const handleEdit = (submission: FormSubmission) => {
     console.log('📝 編輯報名 - 原始資料:', submission);
+    console.log('📝 編輯報名 - eventDate:', submission.eventDate);
     console.log('📝 編輯報名 - slots:', submission.slots);
     
-    // 複製所有天的資料
+    // 先清除狀態，只複製該報名記錄中實際存在的資料
     const editData: any = {
       gameId: submission.gameId,
       playerName: submission.playerName,
@@ -1020,18 +1007,23 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ user, player
       slots: {}
     };
 
-    // 複製所有可用的天數資料
+    // 只複製報名記錄中實際存在的天數資料
     ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'].forEach(day => {
-      editData.slots[day] = submission.slots && submission.slots[day] 
-        ? cloneSlot(submission.slots[day]) 
-        : cloneSlot();
+      if (submission.slots && submission.slots[day]) {
+        // 此日期有資料，複製它
+        editData.slots[day] = cloneSlot(submission.slots[day]);
+      } else {
+        // 此日期沒有資料，使用空 slot
+        editData.slots[day] = cloneSlot();
+      }
     });
     
     console.log('📝 編輯報名 - 設定的資料:', editData);
     
     setFormData(editData);
     setEditingId(submission.id);
-    setEditingSubmission(submission); // 保存原始提交資料以便遷移
+    setEditingSubmission(submission); // 保存原始提交資料
+    setSelectedEventDate(submission.eventDate || null); // 設置所選事件日期以匹配這個報名
     setShowForm(true);
   };
 
@@ -1788,6 +1780,14 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ user, player
             <button
               onClick={() => {
                 console.log('[Debug] 進入 SVS 官職報名模式');
+                // 清除任何舊的編輯狀態，防止舊活動資料被帶入
+                setEditingId(null);
+                setEditingSubmission(null);
+                setSelectedEventDate(null);
+                setFormData(prev => ({
+                  ...prev,
+                  slots: initializeSlots()
+                }));
                 setIsSVSMode(true);
                 setIsSVSMapMode(false);
                 setSelectedMap(null);
