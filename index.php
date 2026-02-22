@@ -17,6 +17,38 @@ if (in_array($script_name, ['diagnostic.php', 'test-php.php']) && file_exists(__
     exit;
 }
 
+// ===== 处理 Game API 请求 (代理到遊戲服務器) =====
+if (strpos($path, '/game-api/') === 0) {
+    $method = $_SERVER['REQUEST_METHOD'];
+    $body = file_get_contents('php://input');
+    
+    // 遊戲 API 地址 - 將 /game-api 替換為 /api
+    $game_path = str_replace('/game-api', '/api', $path);
+    $game_url = 'https://wos-giftcode-api.centurygame.com' . $game_path;
+    
+    $ch = curl_init($game_url);
+    curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $method);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+    
+    if ($method === 'POST' && !empty($body)) {
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $body);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/x-www-form-urlencoded']);
+    }
+    
+    $response = curl_exec($ch);
+    $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+    
+    header('Content-Type: application/json');
+    if ($http_code > 0) {
+        http_response_code($http_code);
+    }
+    echo $response;
+    exit;
+}
+
 // ===== 处理 API 请求 =====
 if (strpos($path, '/api/') === 0) {
     $method = $_SERVER['REQUEST_METHOD'];

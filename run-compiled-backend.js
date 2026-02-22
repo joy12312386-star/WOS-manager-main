@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+ㄇ#!/usr/bin/env node
 /**
  * 启动编译后的后端服务器
  * 编译后的 index.js 已经包含了完整的启动逻辑

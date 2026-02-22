@@ -340,3 +340,650 @@ wira             87202   0.0  0.2 411261424  61264 s084  SN    1:06下午   0:00
 [1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h[?2004l
 [1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h  cat /tmp/backend-final.tar.gz | ssh -i ~/.ssh/cloudways_rsa svs2438@172.105. [K2217.161 'cd public_html && pkill -f "node run-compiled" 2>/dev/null; sleep 1; tar -xz && nohup node run-compiled-backen [Kdd.js > /tmp/backend.log 2>&1 &' && sleep 5 && echo "✓ 后端已启动"[?2004l
 svs2438@172.105.217.161's password: 
+
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h  curl -s http://wos-2438.site/api/health 2>&1[?2004l
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Whiteout Survival Alliance Manager - Player Portal" />
+    <title>WOS Manager - Player Portal</title>
+    <script type="module" crossorigin src="/assets/index-BHuNoQr-.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-C4jtKcl0.css">
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h[?2004l
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h  ssh -i ~/.ssh/cloudways_rsa svs2438@172.105.217.161 'ps aux | grep node'[?2004l
+svs2438@172.105.217.161's password: 
+
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h  git add -A && git commit -m "Fix Prisma MySQL configuration and compile back [Keend" && git push origin main[?2004l
+[main b1084e1] Fix Prisma MySQL configuration and compile backend
+ Committer: Wira <wira@WiradeMacBook-Pro.local>
+Your name and email address were configured automatically based
+on your username and hostname. Please check that they are accurate.
+You can suppress this message by setting them explicitly. Run the
+following command and follow the instructions in your editor to edit
+your configuration file:
+
+    git config --global --edit
+
+After doing this, you may fix the identity used for this commit with:
+
+    git commit --amend --reset-author
+
+ 30 files changed, 6741 insertions(+), 1 deletion(-)
+ create mode 100644 backend-start.php
+ create mode 100644 dist-backend/index.js
+ create mode 100644 dist-backend/middleware/auth.js
+ create mode 100644 dist-backend/routes/auth.js
+ create mode 100644 dist-backend/routes/events.js
+ create mode 100644 dist-backend/routes/officers.js
+ create mode 100644 dist-backend/routes/statistics.js
+ create mode 100644 dist-backend/routes/submissions.js
+ create mode 100644 dist-backend/services/event.service.js
+ create mode 100644 dist-backend/services/officer.service.js
+ create mode 100644 dist-backend/services/statistics.service.js
+ create mode 100644 dist-backend/services/submission.service.js
+ create mode 100644 dist-backend/services/user.service.js
+ create mode 100644 dist/server/index.js
+ create mode 100644 dist/server/middleware/auth.js
+ create mode 100644 dist/server/routes/auth.js
+ create mode 100644 dist/server/routes/events.js
+ create mode 100644 dist/server/routes/officers.js
+ create mode 100644 dist/server/routes/statistics.js
+ create mode 100644 dist/server/routes/submissions.js
+ create mode 100644 dist/server/services/event.service.js
+ create mode 100644 dist/server/services/officer.service.js
+ create mode 100644 dist/server/services/statistics.service.js
+ create mode 100644 dist/server/services/submission.service.js
+ create mode 100644 dist/server/services/user.service.js
+ create mode 100644 run-compiled-backend.js
+ create mode 100644 server/index-standalone.ts
+ create mode 100644 start-backend-safe.sh
+ create mode 100644 typescript
+Enumerating objects: 41, done.
+Counting objects:   2% (1/41)Counting objects:   4% (2/41)Counting objects:   7% (3/41)Counting objects:   9% (4/41)Counting objects:  12% (5/41)Counting objects:  14% (6/41)Counting objects:  17% (7/41)Counting objects:  19% (8/41)Counting objects:  21% (9/41)Counting objects:  24% (10/41)Counting objects:  26% (11/41)Counting objects:  29% (12/41)Counting objects:  31% (13/41)Counting objects:  34% (14/41)Counting objects:  36% (15/41)Counting objects:  39% (16/41)Counting objects:  41% (17/41)Counting objects:  43% (18/41)Counting objects:  46% (19/41)Counting objects:  48% (20/41)Counting objects:  51% (21/41)Counting objects:  53% (22/41)Counting objects:  56% (23/41)Counting objects:  58% (24/41)Counting objects:  60% (25/41)Counting objects:  63% (26/41)Counting objects:  65% (27/41)Counting objects:  68% (28/41)Counting objects:  70% (29/41)Counting objects:  73% (30/41)Counting objects:  75% (31/41)Counting objects:  78% (32/41)Counting objects:  80% (33/41)Counting objects:  82% (34/41)Counting objects:  85% (35/41)Counting objects:  87% (36/41)Counting objects:  90% (37/41)Counting objects:  92% (38/41)Counting objects:  95% (39/41)Counting objects:  97% (40/41)Counting objects: 100% (41/41)Counting objects: 100% (41/41), done.
+Delta compression using up to 14 threads
+Compressing objects:   2% (1/34)Compressing objects:   5% (2/34)Compressing objects:   8% (3/34)Compressing objects:  11% (4/34)Compressing objects:  14% (5/34)Compressing objects:  17% (6/34)Compressing objects:  20% (7/34)Compressing objects:  23% (8/34)Compressing objects:  26% (9/34)Compressing objects:  29% (10/34)Compressing objects:  32% (11/34)Compressing objects:  35% (12/34)Compressing objects:  38% (13/34)Compressing objects:  41% (14/34)Compressing objects:  44% (15/34)Compressing objects:  47% (16/34)Compressing objects:  50% (17/34)Compressing objects:  52% (18/34)Compressing objects:  55% (19/34)Compressing objects:  58% (20/34)Compressing objects:  61% (21/34)Compressing objects:  64% (22/34)Compressing objects:  67% (23/34)Compressing objects:  70% (24/34)Compressing objects:  73% (25/34)Compressing objects:  76% (26/34)Compressing objects:  79% (27/34)Compressing objects:  82% (28/34)Compressing objects:  85% (29/34)Compressing objects:  88% (30/34)Compressing objects:  91% (31/34)Compressing objects:  94% (32/34)Compressing objects:  97% (33/34)Compressing objects: 100% (34/34)Compressing objects: 100% (34/34), done.
+Writing objects:   2% (1/36)Writing objects:   5% (2/36)Writing objects:   8% (3/36)Writing objects:  11% (4/36)Writing objects:  16% (6/36)Writing objects:  19% (7/36)Writing objects:  22% (8/36)Writing objects:  25% (9/36)Writing objects:  33% (12/36)Writing objects:  36% (13/36)Writing objects:  38% (14/36)Writing objects:  44% (16/36)Writing objects:  47% (17/36)Writing objects:  50% (18/36)Writing objects:  55% (20/36)Writing objects:  58% (21/36)Writing objects:  61% (22/36)Writing objects:  63% (23/36)Writing objects:  66% (24/36)Writing objects:  69% (25/36)Writing objects:  72% (26/36)Writing objects:  75% (27/36)Writing objects:  77% (28/36)Writing objects:  80% (29/36)Writing objects:  83% (30/36)Writing objects:  86% (31/36)Writing objects:  88% (32/36)Writing objects:  91% (33/36)Writing objects:  94% (34/36)Writing objects:  97% (35/36)Writing objects: 100% (36/36)Writing objects: 100% (36/36), 29.09 KiB | 9.70 MiB/s, done.
+Total 36 (delta 21), reused 0 (delta 0), pack-reused 0
+remote: Resolving deltas:   0% (0/21)[Kremote: Resolving deltas:   4% (1/21)[Kremote: Resolving deltas:   9% (2/21)[Kremote: Resolving deltas:  14% (3/21)[Kremote: Resolving deltas:  19% (4/21)[Kremote: Resolving deltas:  23% (5/21)[Kremote: Resolving deltas:  28% (6/21)[Kremote: Resolving deltas:  33% (7/21)[Kremote: Resolving deltas:  38% (8/21)[Kremote: Resolving deltas:  42% (9/21)[Kremote: Resolving deltas:  47% (10/21)[Kremote: Resolving deltas:  52% (11/21)[Kremote: Resolving deltas:  57% (12/21)[Kremote: Resolving deltas:  61% (13/21)[Kremote: Resolving deltas:  66% (14/21)[Kremote: Resolving deltas:  71% (15/21)[Kremote: Resolving deltas:  76% (16/21)[Kremote: Resolving deltas:  80% (17/21)[Kremote: Resolving deltas:  85% (18/21)[Kremote: Resolving deltas:  90% (19/21)[Kremote: Resolving deltas:  95% (20/21)[Kremote: Resolving deltas: 100% (21/21)[Kremote: Resolving deltas: 100% (21/21), completed with 5 local objects.[K
+To https://github.com/joy12312386-star/WOS-manager-main.git
+   5135121..b1084e1  main -> main
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h[?2004l
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h  git add index.php && git commit -m "Update backend startup command to use co [Kmmpiled Node.js version" && git push origin main[?2004l
+[main abc7aef] Update backend startup command to use compiled Node.js version
+ Committer: Wira <wira@WiradeMacBook-Pro.local>
+Your name and email address were configured automatically based
+on your username and hostname. Please check that they are accurate.
+You can suppress this message by setting them explicitly. Run the
+following command and follow the instructions in your editor to edit
+your configuration file:
+
+    git config --global --edit
+
+After doing this, you may fix the identity used for this commit with:
+
+    git commit --amend --reset-author
+
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+Enumerating objects: 5, done.
+Counting objects:  20% (1/5)Counting objects:  40% (2/5)Counting objects:  60% (3/5)Counting objects:  80% (4/5)Counting objects: 100% (5/5)Counting objects: 100% (5/5), done.
+Delta compression using up to 14 threads
+Compressing objects:  33% (1/3)Compressing objects:  66% (2/3)Compressing objects: 100% (3/3)Compressing objects: 100% (3/3), done.
+Writing objects:  33% (1/3)Writing objects:  66% (2/3)Writing objects: 100% (3/3)Writing objects: 100% (3/3), 429 bytes | 429.00 KiB/s, done.
+Total 3 (delta 2), reused 0 (delta 0), pack-reused 0
+remote: Resolving deltas:   0% (0/2)[Kremote: Resolving deltas:  50% (1/2)[Kremote: Resolving deltas: 100% (2/2)[Kremote: Resolving deltas: 100% (2/2), completed with 2 local objects.[K
+To https://github.com/joy12312386-star/WOS-manager-main.git
+   b1084e1..abc7aef  main -> main
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h[?2004l
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h  sleep 5 && curl -s http://wos-2438.site/api/health 2>&1 | head -5[?2004l
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h[?2004l
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h  curl -s http://wos-2438.site/api/health 2>&1[?2004l
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Whiteout Survival Alliance Manager - Player Portal" />
+    <title>WOS Manager - Player Portal</title>
+    <script type="module" crossorigin src="/assets/index-BHuNoQr-.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-C4jtKcl0.css">
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h[?2004l
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h  cat /Users/wira/Downloads/WOS-manager-main/run-compiled-backend.js | ssh -i  [K~~/.ssh/cloudways_rsa svs2438@172.105.217.161 'cat > public_html/run-compiled-backend.js && echo "✓ 文件已上传"'[?2004l
+svs2438@172.105.217.161's password: 
+✓ 文件已上传
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h[?2004l
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h  npm run build:server 2>&1[?2004l
+
+> wos-manager@1.0.0 build:server
+> tsc --outDir dist/server
+
+[1G[0K[96mserver/index-standalone.ts[0m:[93m63[0m:[93m27[0m - [91merror[0m[90m TS2769: [0mNo overload matches this call.
+  Overload 1 of 6, '(port: number, hostname: string, backlog: number, callback?: (error?: Error) => void): Server<typeof IncomingMessage, typeof ServerResponse>', gave the following error.
+    Argument of type 'string | 3001' is not assignable to parameter of type 'number'.
+      Type 'string' is not assignable to type 'number'.
+  Overload 2 of 6, '(port: number, hostname: string, callback?: (error?: Error) => void): Server<typeof IncomingMessage, typeof ServerResponse>', gave the following error.
+    Argument of type 'string | 3001' is not assignable to parameter of type 'number'.
+      Type 'string' is not assignable to type 'number'.
+
+[7m63[0m const server = app.listen(PORT, HOST as string, () => {
+[7m  [0m [91m                          ~~~~[0m
+
+
+[96msrc/components/AdminDashboard.tsx[0m:[93m771[0m:[93m9[0m - [91merror[0m[90m TS2322: [0mType 'Record<string, string>' is not assignable to type 'Record<string, ActivityType>'.
+  'string' index signatures are incompatible.
+    Type 'string' is not assignable to type 'ActivityType'.
+
+[7m771[0m         dayConfig: newEvent.dayConfig
+[7m   [0m [91m        ~~~~~~~~~[0m
+
+  [96msrc/services/auth.ts[0m:[93m822[0m:[93m5[0m
+    [7m822[0m     dayConfig?: Record<string, ActivityType>;
+    [7m   [0m [96m    ~~~~~~~~~[0m
+    The expected type comes from property 'dayConfig' which is declared here on type '{ eventDate?: string; title?: string; status?: "closed" | "open" | "disabled"; registrationStart?: string; registrationEnd?: string; description?: string; dayConfig?: Record<string, ActivityType>; }'
+
+[96msrc/components/AdminDashboard.tsx[0m:[93m797[0m:[93m9[0m - [91merror[0m[90m TS2322: [0mType 'Record<string, string>' is not assignable to type 'Record<string, ActivityType>'.
+  'string' index signatures are incompatible.
+    Type 'string' is not assignable to type 'ActivityType'.
+
+[7m797[0m         dayConfig: newEvent.dayConfig
+[7m   [0m [91m        ~~~~~~~~~[0m
+
+  [96msrc/services/auth.ts[0m:[93m769[0m:[93m5[0m
+    [7m769[0m     dayConfig?: Record<string, ActivityType>;
+    [7m   [0m [96m    ~~~~~~~~~[0m
+    The expected type comes from property 'dayConfig' which is declared here on type '{ eventDate: string; title?: string; registrationStart: string; registrationEnd: string; description?: string; dayConfig?: Record<string, ActivityType>; }'
+
+[96msrc/components/AdminDashboard.tsx[0m:[93m1539[0m:[93m35[0m - [91merror[0m[90m TS2367: [0mThis comparison appears to be unintentional because the types 'ActivityType' and '"none"' have no overlap.
+
+[7m1539[0m                               if (newActivityType === 'none') {
+[7m    [0m [91m                                  ~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[96msrc/components/AdminDashboard.tsx[0m:[93m1556[0m:[93m80[0m - [91merror[0m[90m TS2345: [0mArgument of type '"warning"' is not assignable to parameter of type 'ToastType'.
+
+[7m1556[0m                                 addToast(`⚠️ 已自動清除${dayName}的設定，因為每種增益只能設在一天`, 'warning');
+[7m    [0m [91m                                                                               ~~~~~~~~~[0m
+
+[96msrc/components/GroupManager.tsx[0m:[93m33[0m:[93m34[0m - [91merror[0m[90m TS2339: [0mProperty 'loadGroups' does not exist on type 'typeof StorageService'.
+
+[7m33[0m     const saved = StorageService.loadGroups();
+[7m  [0m [91m                                 ~~~~~~~~~~[0m
+
+[96msrc/components/GroupManager.tsx[0m:[93m50[0m:[93m43[0m - [91merror[0m[90m TS2551: [0mProperty 'saveGroups' does not exist on type 'typeof StorageService'. Did you mean 'saveGroup'?
+
+[7m50[0m     if (groups.length > 0) StorageService.saveGroups(groups);
+[7m  [0m [91m                                          ~~~~~~~~~~[0m
+
+  [96msrc/services/storage.ts[0m:[93m2[0m:[93m10[0m
+    [7m2[0m   static saveGroup(group: any): void {
+    [7m [0m [96m         ~~~~~~~~~[0m
+    'saveGroup' is declared here.
+
+[96msrc/components/GroupManager/GroupTable.tsx[0m:[93m3[0m:[93m42[0m - [91merror[0m[90m TS2307: [0mCannot find module '../../types' or its corresponding type declarations.
+
+[7m3[0m import { PlayerGroup, GroupPlayer } from '../../types';
+[7m [0m [91m                                         ~~~~~~~~~~~~~[0m
+
+[96msrc/components/GroupManager/GroupTabs.tsx[0m:[93m3[0m:[93m29[0m - [91merror[0m[90m TS2307: [0mCannot find module '../../types' or its corresponding type declarations.
+
+[7m3[0m import { PlayerGroup } from '../../types';
+[7m [0m [91m                            ~~~~~~~~~~~~~[0m
+
+[96msrc/components/ImportPanel.tsx[0m:[93m29[0m:[93m36[0m - [91merror[0m[90m TS2339: [0mProperty 'loadLastImportIds' does not exist on type 'typeof StorageService'.
+
+[7m29[0m     const lastIds = StorageService.loadLastImportIds();
+[7m  [0m [91m                                   ~~~~~~~~~~~~~~~~~[0m
+
+[96msrc/components/ImportPanel.tsx[0m:[93m31[0m:[93m35[0m - [91merror[0m[90m TS2339: [0mProperty 'loadCachedPlayers' does not exist on type 'typeof StorageService'.
+
+[7m31[0m     const cached = StorageService.loadCachedPlayers();
+[7m  [0m [91m                                  ~~~~~~~~~~~~~~~~~[0m
+
+[96msrc/components/ImportPanel.tsx[0m:[93m38[0m:[93m20[0m - [91merror[0m[90m TS2339: [0mProperty 'saveCachedPlayers' does not exist on type 'typeof StorageService'.
+
+[7m38[0m     StorageService.saveCachedPlayers(foundPlayers);
+[7m  [0m [91m                   ~~~~~~~~~~~~~~~~~[0m
+
+[96msrc/components/ImportPanel.tsx[0m:[93m60[0m:[93m20[0m - [91merror[0m[90m TS2339: [0mProperty 'saveLastImportIds' does not exist on type 'typeof StorageService'.
+
+[7m60[0m     StorageService.saveLastImportIds(batchText);
+[7m  [0m [91m                   ~~~~~~~~~~~~~~~~~[0m
+
+[96msrc/services/auth.ts[0m:[93m143[0m:[93m56[0m - [91merror[0m[90m TS2339: [0mProperty 'nickname' does not exist on type 'User'.
+
+[7m143[0m           nickname: serverUser.nickname || currentUser.nickname,
+[7m   [0m [91m                                                       ~~~~~~~~[0m
+
+
+Found 14 errors in 7 files.
+
+Errors  Files
+     1  server/index-standalone.ts[90m:63[0m
+     4  src/components/AdminDashboard.tsx[90m:771[0m
+     2  src/components/GroupManager.tsx[90m:33[0m
+     1  src/components/GroupManager/GroupTable.tsx[90m:3[0m
+     1  src/components/GroupManager/GroupTabs.tsx[90m:3[0m
+     4  src/components/ImportPanel.tsx[90m:29[0m
+     1  src/services/auth.ts[90m:143[0m
+[1G[0K⠙[1G[0K[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h[?2004l
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h  tar -czf dist-backend.tar.gz dist-backend/ && ls -lh dist-backend.tar.gz[?2004l
+-rw-r--r--@ 1 wira  staff    17K  1 24 13:20 dist-backend.tar.gz
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h[?2004l
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h  cat /Users/wira/Downloads/WOS-manager-main/dist-backend.tar.gz | ssh -i ~/.s [Kssh/cloudways_rsa svs2438@172.105.217.161 'cd public_html && tar -xzf - && echo "✓ Extracted" && ls -la dist-backend/ |  [Khhead -10'[?2004l
+svs2438@172.105.217.161's password: 
+
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h  cat /Users/wira/Downloads/WOS-manager-main/dist-backend.tar.gz | ssh -i ~/.s [Kssh/cloudways_rsa svs2438@172.105.217.161 'cd public_html && tar -xz && echo "✓ Extracted" && ls -la dist-backend/ | hea [Kdd -10'[?2004l
+svs2438@172.105.217.161's password: 
+
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h  ssh -i ~/.ssh/cloudways_rsa svs2438@172.105.217.161 'echo "Testing SSH" && e [Kccho "OK"'[?2004l
+svs2438@172.105.217.161's password: 
+
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h  scp /Users/wira/Downloads/WOS-manager-main/dist-backend.tar.gz svs2438@172.1 [K005.217.161:~/public_html/ 2>&1 && echo "✓ Upload complete"[?2004l
+svs2438@172.105.217.161's password: 
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h  which sshpass || brew install sshpass[?2004l
+/opt/homebrew/bin/sshpass
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h[?2004l
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h  base64 -i dist-backend.tar.gz > dist-backend.tar.gz.b64 && wc -l dist-backen [Kdd.tar.gz.b64[?2004l
+       1 dist-backend.tar.gz.b64
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h[?2004l
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h  git status dist-backend/ | head -20[?2004l
+On branch main
+Your branch is up to date with 'origin/main'.
+
+nothing to commit, working tree clean
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h[?2004l
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h  ssh -i ~/.ssh/cloudways_rsa -o StrictHostKeyChecking=no -o UserKnownHostsFil [Kee=/dev/null svs2438@172.105.217.161 "cd public_html && ls -la dist-backend/ 2>&1 | head -5" 2>&1 || echo "SSH failed, t [Krrying without key..."[?2004l
+Warning: Permanently added '172.105.217.161' (RSA) to the list of known hosts.
+svs2438@172.105.217.161's password: 
+
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h  git log --oneline dist-backend/ | head -3[?2004l
+b1084e1 Fix Prisma MySQL configuration and compile backend
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h[?2004l
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h  ls -la dist-backend/ | head -10[?2004l
+total 16
+drwxr-xr-x@  6 wira  staff   192  1 24 13:08 .
+drwxrwxr-x@ 70 wira  staff  2240  1 24 13:21 ..
+-rw-r--r--@  1 wira  staff  6461  1 24 13:08 index.js
+drwxr-xr-x@  3 wira  staff    96  1 24 13:08 middleware
+drwxr-xr-x@  7 wira  staff   224  1 24 13:08 routes
+drwxr-xr-x@  7 wira  staff   224  1 24 13:08 services
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h[?2004l
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h  cat > /tmp/upload_backend.sh << 'EOF'[?2004l
+[0m[27m[24m[Jheredoc> [K[?2004h##!/bin/bash[?2004l
+[0m[27m[24m[Jheredoc> [K[?2004hsset -e[?2004l
+[0m[27m[24m[Jheredoc> [K[?2004h[?2004l
+[0m[27m[24m[Jheredoc> [K[?2004hRREMOTE_USER="svs2438"[?2004l
+[0m[27m[24m[Jheredoc> [K[?2004hRREMOTE_HOST="172.105.217.161"[?2004l
+[0m[27m[24m[Jheredoc> [K[?2004hRREMOTE_DIR="/home/996734.cloudwaysapps.com/vwvwhgqshd/public_html"[?2004l
+[0m[27m[24m[Jheredoc> [K[?2004h[?2004l
+[0m[27m[24m[Jheredoc> [K[?2004h## 打包本地 dist-backend[?2004l
+[0m[27m[24m[Jheredoc> [K[?2004hccd /Users/wira/Downloads/WOS-manager-main[?2004l
+[0m[27m[24m[Jheredoc> [K[?2004httar -czf /tmp/dist-backend.tar.gz dist-backend/[?2004l
+[0m[27m[24m[Jheredoc> [K[?2004heecho "✓ Packaged dist-backend"[?2004l
+[0m[27m[24m[Jheredoc> [K[?2004h[?2004l
+[0m[27m[24m[Jheredoc> [K[?2004h## 使用 expect 腳本自動化 SSH 密碼輸入[?2004l
+[0m[27m[24m[Jheredoc> [K[?2004heexpect << EXPECT_EOF[?2004l
+[0m[27m[24m[Jheredoc> [K[?2004hsset timeout 30[?2004l
+[0m[27m[24m[Jheredoc> [K[?2004hsspawn scp /tmp/dist-backend.tar.gz $REMOTE_USER@$REMOTE_HOST:~[?2004l
+[0m[27m[24m[Jheredoc> [K[?2004h[?2004l
+[0m[27m[24m[Jheredoc> [K[?2004heexpect "password:"[?2004l
+[0m[27m[24m[Jheredoc> [K[?2004hssend "vwvwhgqshd\r"[?2004l
+[0m[27m[24m[Jheredoc> [K[?2004h[?2004l
+[0m[27m[24m[Jheredoc> [K[?2004heexpect eof[?2004l
+[0m[27m[24m[Jheredoc> [K[?2004hEEXPECT_EOF[?2004l
+[0m[27m[24m[Jheredoc> [K[?2004h[?2004l
+[0m[27m[24m[Jheredoc> [K[?2004heecho "✓ Uploaded to remote"[?2004l
+[0m[27m[24m[Jheredoc> [K[?2004h[?2004l
+[0m[27m[24m[Jheredoc> [K[?2004h## 解壓在遠程伺服器上[?2004l
+[0m[27m[24m[Jheredoc> [K[?2004heexpect << EXPECT_EOF[?2004l
+[0m[27m[24m[Jheredoc> [K[?2004hsset timeout 30[?2004l
+[0m[27m[24m[Jheredoc> [K[?2004hsspawn ssh $REMOTE_USER@$REMOTE_HOST[?2004l
+[0m[27m[24m[Jheredoc> [K[?2004h[?2004l
+[0m[27m[24m[Jheredoc> [K[?2004heexpect "password:"[?2004l
+[0m[27m[24m[Jheredoc> [K[?2004hssend "vwvwhgqshd\r"[?2004l
+[0m[27m[24m[Jheredoc> [K[?2004h[?2004l
+[0m[27m[24m[Jheredoc> [K[?2004heexpect "$"[?2004l
+[0m[27m[24m[Jheredoc> [K[?2004hssend "cd $REMOTE_DIR && tar -xzf ~/dist-backend.tar.gz && rm ~/dist-backend.tar.gz\r"[?2004l
+[0m[27m[24m[Jheredoc> [K[?2004h[?2004l
+[0m[27m[24m[Jheredoc> [K[?2004heexpect "$"[?2004l
+[0m[27m[24m[Jheredoc> [K[?2004hssend "ls -la dist-backend/ | head -3\r"[?2004l
+[0m[27m[24m[Jheredoc> [K[?2004h[?2004l
+[0m[27m[24m[Jheredoc> [K[?2004heexpect "$"[?2004l
+[0m[27m[24m[Jheredoc> [K[?2004hssend "exit\r"[?2004l
+[0m[27m[24m[Jheredoc> [K[?2004h[?2004l
+[0m[27m[24m[Jheredoc> [K[?2004heexpect eof[?2004l
+[0m[27m[24m[Jheredoc> [K[?2004hEEXPECT_EOF[?2004l
+[0m[27m[24m[Jheredoc> [K[?2004h[?2004l
+[0m[27m[24m[Jheredoc> [K[?2004heecho "✓ Extracted on remote"[?2004l
+[0m[27m[24m[Jheredoc> [K[?2004hEEOF[?2004l
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004hcchmod +x /tmp/upload_backend.sh[?2004l
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004heecho "✓ Script ready"[?2004l
+✓ Script ready
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h[7mbash: cd: too many arguments                                                 [7m [7m                                                                                                               [27m[K
+[K[A[A[42C[27mb[27ma[27ms[27mh[27m:[27m [27mc[27md[27m:[27m [27mt[27mo[27mo[27m [27mm[27ma[27mn[27my[27m [27ma[27mr[27mg[27mu[27mm[27me[27mn[27mt[27ms[27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m  [K[1B[K[?2004l
+zsh: command not found: bash:
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h[?2004l
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h  tar czf /tmp/dist-backend.tar.gz dist-backend/ && echo "✓ Packaged" && ls -l [Khh /tmp/dist-backend.tar.gz[?2004l
+✓ Packaged
+-rw-r--r--@ 1 wira  wheel    17K  1 24 13:25 /tmp/dist-backend.tar.gz
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h[?2004l
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h  cat /tmp/dist-backend.tar.gz | ssh svs2438@172.105.217.161 'cd ~/public_html [K  && tar xzf - && ls -la dist-backend/ | head -5 && echo "✓ Upload complete"'[?2004l
+svs2438@172.105.217.161's password: 
+total 44
+drwxr-xr-x  5 vwvwhgqshd www-data 4096 Jan 24 05:08 .
+drwxrwxr-x 10 vwvwhgqshd www-data 4096 Jan 24 05:26 ..
+-rw-r--r--  1 vwvwhgqshd www-data  163 Jan 24 05:08 ._index.js
+-rw-r--r--  1 vwvwhgqshd www-data 6461 Jan 24 05:08 index.js
+tar: Ignoring unknown extended header keyword 'LIBARCHIVE.xattr.com.apple.provenance'
+tar: Ignoring unknown extended header keyword 'LIBARCHIVE.xattr.com.apple.provenance'
+tar: Ignoring unknown extended header keyword 'LIBARCHIVE.xattr.com.apple.provenance'
+tar: Ignoring unknown extended header keyword 'LIBARCHIVE.xattr.com.apple.provenance'
+tar: Ignoring unknown extended header keyword 'LIBARCHIVE.xattr.com.apple.provenance'
+tar: Ignoring unknown extended header keyword 'LIBARCHIVE.xattr.com.apple.provenance'
+tar: Ignoring unknown extended header keyword 'LIBARCHIVE.xattr.com.apple.provenance'
+tar: Ignoring unknown extended header keyword 'LIBARCHIVE.xattr.com.apple.provenance'
+tar: Ignoring unknown extended header keyword 'LIBARCHIVE.xattr.com.apple.provenance'
+tar: Ignoring unknown extended header keyword 'LIBARCHIVE.xattr.com.apple.provenance'
+tar: Ignoring unknown extended header keyword 'LIBARCHIVE.xattr.com.apple.provenance'
+tar: Ignoring unknown extended header keyword 'LIBARCHIVE.xattr.com.apple.provenance'
+tar: Ignoring unknown extended header keyword 'LIBARCHIVE.xattr.com.apple.provenance'
+tar: Ignoring unknown extended header keyword 'LIBARCHIVE.xattr.com.apple.provenance'
+tar: Ignoring unknown extended header keyword 'LIBARCHIVE.xattr.com.apple.provenance'
+tar: Ignoring unknown extended header keyword 'LIBARCHIVE.xattr.com.apple.provenance'
+✓ Upload complete
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h[?2004l
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h  ssh svs2438@172.105.217.161 'ls -la ~/public_html/dist-backend/ 2>&1 | head  [K--8'[?2004l
+svs2438@172.105.217.161's password: 
+total 44
+drwxr-xr-x  5 vwvwhgqshd www-data 4096 Jan 24 05:08 .
+drwxrwxr-x 10 vwvwhgqshd www-data 4096 Jan 24 05:26 ..
+-rw-r--r--  1 vwvwhgqshd www-data  163 Jan 24 05:08 ._index.js
+-rw-r--r--  1 vwvwhgqshd www-data 6461 Jan 24 05:08 index.js
+-rwxr-xr-x  1 vwvwhgqshd www-data  163 Jan 24 05:08 ._middleware
+drwxr-xr-x  2 vwvwhgqshd www-data 4096 Jan 24 05:26 middleware
+-rwxr-xr-x  1 vwvwhgqshd www-data  163 Jan 24 05:08 ._routes
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h[?2004l
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h  ssh svs2438@172.105.217.161 'ls -la ~/public_html/dist-backend/ 2>&1 | head  [K--10'[?2004l
+svs2438@172.105.217.161's password: 
+total 44
+drwxr-xr-x  5 vwvwhgqshd www-data 4096 Jan 24 05:08 .
+drwxrwxr-x 10 vwvwhgqshd www-data 4096 Jan 24 05:26 ..
+-rw-r--r--  1 vwvwhgqshd www-data  163 Jan 24 05:08 ._index.js
+-rw-r--r--  1 vwvwhgqshd www-data 6461 Jan 24 05:08 index.js
+-rwxr-xr-x  1 vwvwhgqshd www-data  163 Jan 24 05:08 ._middleware
+drwxr-xr-x  2 vwvwhgqshd www-data 4096 Jan 24 05:26 middleware
+-rwxr-xr-x  1 vwvwhgqshd www-data  163 Jan 24 05:08 ._routes
+drwxr-xr-x  2 vwvwhgqshd www-data 4096 Jan 24 05:26 routes
+-rwxr-xr-x  1 vwvwhgqshd www-data  163 Jan 24 05:08 ._services
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h[?2004l
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h[?2004l
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h  ssh svs2438@172.105.217.161 'cd ~/public_html && ls -la dist-backend/ && ech [Koo "---" && NODE_ENV=production nohup node run-compiled-backend.js > /tmp/backend.log 2>&1 & sleep 2 && curl -s http://1 [K227.0.0.1:3001/api/health && echo "✓ Backend started"'[?2004l
+svs2438@172.105.217.161's password: 
+total 44
+drwxr-xr-x  5 vwvwhgqshd www-data 4096 Jan 24 05:08 .
+drwxrwxr-x 10 vwvwhgqshd www-data 4096 Jan 24 05:26 ..
+-rw-r--r--  1 vwvwhgqshd www-data  163 Jan 24 05:08 ._index.js
+-rw-r--r--  1 vwvwhgqshd www-data 6461 Jan 24 05:08 index.js
+-rwxr-xr-x  1 vwvwhgqshd www-data  163 Jan 24 05:08 ._middleware
+drwxr-xr-x  2 vwvwhgqshd www-data 4096 Jan 24 05:26 middleware
+-rwxr-xr-x  1 vwvwhgqshd www-data  163 Jan 24 05:08 ._routes
+drwxr-xr-x  2 vwvwhgqshd www-data 4096 Jan 24 05:26 routes
+-rwxr-xr-x  1 vwvwhgqshd www-data  163 Jan 24 05:08 ._services
+drwxr-xr-x  2 vwvwhgqshd www-data 4096 Jan 24 05:08 services
+---
+/bin/bash: line 1: /tmp/backend.log: Permission denied
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h[?2004l
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h  ssh svs2438@172.105.217.161 'cd ~/public_html && ls dist-backend/'[?2004l
+svs2438@172.105.217.161's password: 
+index.js
+middleware
+routes
+services
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h[?2004l
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h  ssh svs2438@172.105.217.161 'cd ~/public_html && NODE_ENV=production nohup n [Koode run-compiled-backend.js > ~/backend.log 2>&1 & sleep 3 && curl -s http://127.0.0.1:3001/api/health'[?2004l
+svs2438@172.105.217.161's password: 
+/bin/bash: line 1: /home/996734.cloudwaysapps.com/vwvwhgqshd/backend.log: Permission denied
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h[?2004l
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h  sshpass -p 'Svs2438' ssh svs2438@172.105.217.161 'cd ~/public_html && NODE_E [KNNV=production nohup node run-compiled-backend.js > ~/backend.log 2>&1 & sleep 3 && curl -s http://127.0.0.1:3001/api/he [Kaalth && echo "✓ Backend OK"'[?2004l
+Permission denied, please try again.
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h[?2004l
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h  sshpass -p 'Svs2438' ssh svs2438@172.105.217.161 'cat ~/backend.log | tail - [K220'[?2004l
+Permission denied, please try again.
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h[?2004l
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h  sshpass -p 'Svs2438' ssh -o StrictHostKeyChecking=no svs2438@172.105.217.161 [K  'echo "SSH OK" && cat ~/backend.log 2>&1 | tail -30'[?2004l
+Permission denied, please try again.
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h[?2004l
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h  sshpass -p 'svs2438' ssh -o StrictHostKeyChecking=no svs2438@172.105.217.161 [K  'echo "Connected" && pwd' 2>&1[?2004l
+Permission denied, please try again.
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h[?2004l
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h  echo "Testing connection..." && sshpass -p 'Svs2438' ssh -o StrictHostKeyChe [Kccking=no -o ConnectTimeout=10 svs2438@172.105.217.161 'echo "SSH Connected" && pwd' 2>&1 || echo "Connection failed"[?2004l
+Testing connection...
+Permission denied, please try again.
+Connection failed
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h[?2004l
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h  cat /Users/wira/Downloads/WOS-manager-main/prisma/schema.prisma | ssh svs243 [K88@172.105.217.161 'cat > ~/public_html/prisma/schema.prisma.new && chmod 644 ~/public_html/prisma/schema.prisma.new &&  [Kmmv ~/public_html/prisma/schema.prisma.new ~/public_html/prisma/schema.prisma && echo "✓ Schema updated" && head -12 ~/p [Kuublic_html/prisma/schema.prisma'[?2004l
+svs2438@172.105.217.161's password: 
+✓ Schema updated
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h[?2004l
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h  ssh svs2438@172.105.217.161 'head -12 ~/public_html/prisma/schema.prisma'[?2004l
+svs2438@172.105.217.161's password: 
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h[?2004l
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h>....                                                                        
+[7mgenerator client {                                                                                                     [7m [7m                                                                     [27m[K
+[7m  provider = "prisma-client-js"                                                                                        [7m [7m                                                                     [27m[K
+[7m}                                                                                                                      [7m [7m                                                                     [27m[K
+[7m                                                                                                                       [7m [7m                                                                     [27m[K
+[7mdatasource db {                                                                                                        [7m [7m                                                                     [27m[K
+[7m  provider = "mysql"                                                                                                   [7m [7m                                                                     [27m[K
+[7m  url      = env("DATABASE_URL")                                                                                       [7m [7m                                                                     [27m[K
+[7m}                                    [27m[K[14A[27mg[27me[27mn[27me[27mr[27ma[27mt[27mo[27mr[27m [27mc[27ml[27mi[27me[27mn[27mt[27m [27m{[27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m  [K[1B[27m [27m [27mp[27mr[27mo[27mv[27mi[27md[27me[27mr[27m [27m=[27m [27m"[27mp[27mr[27mi[27ms[27mm[27ma[27m-[27mc[27ml[27mi[27me[27mn[27mt[27m-[27mj[27ms[27m"[27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m  [K[1B[27m}[27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m  [K[1B[27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m  [K[1B[27md[27ma[27mt[27ma[27ms[27mo[27mu[27mr[27mc[27me[27m [27md[27mb[27m [27m{[27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m  [K[1B[27m [27m [27mp[27mr[27mo[27mv[27mi[27md[27me[27mr[27m [27m=[27m [27m"[27mm[27my[27ms[27mq[27ml[27m"[27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m  [K[1B[27m [27m [27mu[27mr[27ml[27m [27m [27m [27m [27m [27m [27m=[27m [27me[27mn[27mv[27m([27m"[27mD[27mA[27mT[27mA[27mB[27mA[27mS[27mE[27m_[27mU[27mR[27mL[27m"[27m)[27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m [27m  [K[1B[27m}[K[36C[?2004l
+zsh: parse error near `}'
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h[?2004l
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h  ssh svs2438@172.105.217.161 'cat ~/public_html/index.php | head -50'[?2004l
+svs2438@172.105.217.161's password: 
+
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h  cat /Users/wira/Downloads/WOS-manager-main/index.php | ssh svs2438@172.105.2 [K117.161 'cat > ~/public_html/index.php.new && mv ~/public_html/index.php.new ~/public_html/index.php && echo "✓ Uploaded [K"" && head -25 ~/public_html/index.php'[?2004l
+svs2438@172.105.217.161's password: 
+✓ Uploaded
+<?php
+/**
+ * API 请求处理器 - 带有自动后端启动功能
+ * 如果后端未运行，此脚本会尝试启动它
+ */
+
+// 获取原始请求路径
+// 从 REQUEST_URI 中提取真实路径
+$request_uri = $_SERVER['REQUEST_URI'];
+$path = parse_url($request_uri, PHP_URL_PATH);
+
+// 处理直接访问 .php 文件的情况
+// 如果访问 /test-php.php、/diagnostic.php 等，直接包含文件
+$script_name = basename($path);
+if (in_array($script_name, ['diagnostic.php', 'test-php.php']) && file_exists(__DIR__ . '/' . $script_name)) {
+    include __DIR__ . '/' . $script_name;
+    exit;
+}
+
+// ===== 处理 API 请求 =====
+if (strpos($path, '/api/') === 0) {
+    $method = $_SERVER['REQUEST_METHOD'];
+    $body = file_get_contents('php://input');
+    $query_string = $_SERVER['QUERY_STRING'] ?? '';
+    
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h[?2004l
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h  curl -s http://wos-2438.site/api/health[?2004l
+{"status":"ok","message":"Server is running"}[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h[?2004l
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h  curl -s -X POST http://wos-2438.site/api/auth/login -H "Content-Type: applic [Kaation/json" -d '{"gameId":"380768429","password":"admin123"}'[?2004l
+{"error":"Invalid credentials"}[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h[?2004l
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h  curl -s -X POST http://wos-2438.site/api/auth/login -H "Content-Type: applic [Kaation/json" -d '{"gameId":"380768429","password":"admin@123"}'[?2004l
+{"token":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJjbWtyd2s3azYwMDAwem5xZmVmbmQyMW13IiwiZ2FtZUlkIjoiMzgwNzY4NDI5IiwiaXNBZG1pbiI6dHJ1ZSwiaWF0IjoxNzY5MjM1MTcxLCJleHAiOjE3Njk4Mzk5NzF9.2PA3rgDSaf_8NDnxOctsLxRS5ex6cpGgI7OXOId0ARA","user":{"id":"cmkrwk7k60000znqfefnd21mw","gameId":"380768429","allianceName":"Admin Alliance","isAdmin":true}}[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h[?2004l
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h  curl -s http://wos-2438.site/api/auth/verify-game-id -X POST -H "Content-Typ [Kee: application/json" -d '{"gameId":"380768429"}'[?2004l
+{"error":"API endpoint not found"}[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h[?2004l
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h  cat /Users/wira/Downloads/WOS-manager-main/index.php | ssh svs2438@172.105.2 [K117.161 'cat > ~/public_html/index.php && echo "✓ index.php uploaded"'[?2004l
+svs2438@172.105.217.161's password: 
+
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h  sleep 5 && curl -s -X POST http://wos-2438.site/game-api/player -H "Content- [KTType: application/x-www-form-urlencoded" -d "fid=380768429&time=1706097600&sign=test123"[?2004l
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Whiteout Survival Alliance Manager - Player Portal" />
+    <title>WOS Manager - Player Portal</title>
+    <script type="module" crossorigin src="/assets/index-BHuNoQr-.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-C4jtKcl0.css">
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h[?2004l
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h  curl -s -X POST http://wos-2438.site/game-api/player -H "Content-Type: appli [Kccation/x-www-form-urlencoded" -d "fid=380768429&time=1706097600&sign=test123"[?2004l
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Whiteout Survival Alliance Manager - Player Portal" />
+    <title>WOS Manager - Player Portal</title>
+    <script type="module" crossorigin src="/assets/index-BHuNoQr-.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-C4jtKcl0.css">
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h[?2004l
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h  cat /Users/wira/Downloads/WOS-manager-main/index.php | ssh -i ~/.ssh/cloudwa [Kyys_rsa svs2438@172.105.217.161 'cat > public_html/index.php && echo "✓ index.php 已更新"'[?2004l
+svs2438@172.105.217.161's password: 
+
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h  ssh-add -l 2>/dev/null || echo "No agent"[?2004l
+The agent has no identities.
+No agent
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h[?2004l
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h  ssh-add ~/.ssh/cloudways_rsa 2>&1 || echo "需要手動添加"[?2004l
+Identity added: /Users/wira/.ssh/cloudways_rsa (wos-manager@cloudways)
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h[?2004l
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h  cat /Users/wira/Downloads/WOS-manager-main/index.php | ssh -i ~/.ssh/cloudwa [Kyys_rsa svs2438@172.105.217.161 'cat > public_html/index.php && echo "✓ index.php 已更新"'[?2004l
+svs2438@172.105.217.161's password: 
+✓ index.php 已更新
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h[?2004l
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h  pkill -f "ssh.*172.105.217.161" 2>/dev/null; echo "已終止"[?2004l
+已終止
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h[?2004l
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h  base64 /Users/wira/Downloads/WOS-manager-main/index.php | tr -d '\n' > /tmp/ [Kiindex_b64.txt && echo "Base64 長度: $(wc -c < /tmp/index_b64.txt)"[?2004l
+base64: invalid argument /Users/wira/Downloads/WOS-manager-main/index.php
+Usage:	base64 [-Ddh] [-b num] [-i in_file] [-o out_file]
+  -b, --break       break encoded output up into lines of length num
+  -D, -d, --decode  decode input
+  -h, --help        display this message
+  -i, --input       input file (default: "-" for stdin)
+  -o, --output      output file (default: "-" for stdout)
+Base64 長度:        0
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h[?2004l
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h  base64 -i /Users/wira/Downloads/WOS-manager-main/index.php -o /tmp/index_b64 [K..txt && echo "✓ Base64 長度: $(wc -c < /tmp/index_b64.txt)"[?2004l
+✓ Base64 長度:     8509
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h[?2004l
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h  cat /tmp/index_b64.txt[?2004l
+PD9waHAKLyoqCiAqIEFQSSDor7fmsYLlpITnkIblmaggLSDluKbmnInoh6rliqjlkI7nq6/lkK/liqjlip/og70KICog5aaC5p6c5ZCO56uv5pyq6L+Q6KGM77yM5q2k6ISa5pys5Lya5bCd6K+V5ZCv5Yqo5a6DCiAqLwoKLy8g6I635Y+W5Y6f5aeL6K+35rGC6Lev5b6ECi8vIOS7jiBSRVFVRVNUX1VSSSDkuK3mj5Dlj5bnnJ/lrp7ot6/lvoQKJHJlcXVlc3RfdXJpID0gJF9TRVJWRVJbJ1JFUVVFU1RfVVJJJ107CiRwYXRoID0gcGFyc2VfdXJsKCRyZXF1ZXN0X3VyaSwgUEhQX1VSTF9QQVRIKTsKCi8vIOWkhOeQhuebtOaOpeiuv+mXriAucGhwIOaWh+S7tueahOaDheWGtQovLyDlpoLmnpzorr/pl64gL3Rlc3QtcGhwLnBocOOAgS9kaWFnbm9zdGljLnBocCDnrYnvvIznm7TmjqXljIXlkKvmlofku7YKJHNjcmlwdF9uYW1lID0gYmFzZW5hbWUoJHBhdGgpOwppZiAoaW5fYXJyYXkoJHNjcmlwdF9uYW1lLCBbJ2RpYWdub3N0aWMucGhwJywgJ3Rlc3QtcGhwLnBocCddKSAmJiBmaWxlX2V4aXN0cyhfX0RJUl9fIC4gJy8nIC4gJHNjcmlwdF9uYW1lKSkgewogICAgaW5jbHVkZSBfX0RJUl9fIC4gJy8nIC4gJHNjcmlwdF9uYW1lOwogICAgZXhpdDsKfQoKLy8gPT09PT0g5aSE55CGIEdhbWUgQVBJIOivt+axgiAo5Luj55CG5Yiw6YGK5oiy5pyN5YuZ5ZmoKSA9PT09PQppZiAoc3RycG9zKCRwYXRoLCAnL2dhbWUtYXBpLycpID09PSAwKSB7CiAgICAkbWV0aG9kID0gJF9TRVJWRVJbJ1JFUVVFU1RfTUVUSE9EJ107CiAgICAkYm9keSA9IGZpbGVfZ2V0X2NvbnRlbnRzKCdwaHA6Ly9pbnB1dCcpOwogICAgCiAgICAvLyDpgYrmiLIgQVBJIOWcsOWdgCAtIOWwhyAvZ2FtZS1hcGkg5pu/5o+b54K6IC9hcGkKICAgICRnYW1lX3BhdGggPSBzdHJfcmVwbGFjZSgnL2dhbWUtYXBpJywgJy9hcGknLCAkcGF0aCk7CiAgICAkZ2FtZV91cmwgPSAnaHR0cHM6Ly93b3MtZ2lmdGNvZGUtYXBpLmNlbnR1cnlnYW1lLmNvbScgLiAkZ2FtZV9wYXRoOwogICAgCiAgICAkY2ggPSBjdXJsX2luaXQoJGdhbWVfdXJsKTsKICAgIGN1cmxfc2V0b3B0KCRjaCwgQ1VSTE9QVF9DVVNUT01SRVFVRVNULCAkbWV0aG9kKTsKICAgIGN1cmxfc2V0b3B0KCRjaCwgQ1VSTE9QVF9SRVRVUk5UUkFOU0ZFUiwgdHJ1ZSk7CiAgICBjdXJsX3NldG9wdCgkY2gsIENVUkxPUFRfVElNRU9VVCwgMzApOwogICAgY3VybF9zZXRvcHQoJGNoLCBDVVJMT1BUX1NTTF9WRVJJRllQRUVSLCBmYWxzZSk7CiAgICAKICAgIGlmICgkbWV0aG9kID09PSAnUE9TVCcgJiYgIWVtcHR5KCRib2R5KSkgewogICAgICAgIGN1cmxfc2V0b3B0KCRjaCwgQ1VSTE9QVF9QT1NURklFTERTLCAkYm9keSk7CiAgICAgICAgY3VybF9zZXRvcHQoJGNoLCBDVVJMT1BUX0hUVFBIRUFERVIsIFsnQ29udGVudC1UeXBlOiBhcHBsaWNhdGlvbi94LXd3dy1mb3JtLXVybGVuY29kZWQnXSk7CiAgICB9CiAgICAKICAgICRyZXNwb25zZSA9IGN1cmxfZXhlYygkY2gpOwogICAgJGh0dHBfY29kZSA9IGN1cmxfZ2V0aW5mbygkY2gsIENVUkxJTkZPX0hUVFBfQ09ERSk7CiAgICBjdXJsX2Nsb3NlKCRjaCk7CiAgICAKICAgIGhlYWRlcignQ29udGVudC1UeXBlOiBhcHBsaWNhdGlvbi9qc29uJyk7CiAgICBpZiAoJGh0dHBfY29kZSA+IDApIHsKICAgICAgICBodHRwX3Jlc3BvbnNlX2NvZGUoJGh0dHBfY29kZSk7CiAgICB9CiAgICBlY2hvICRyZXNwb25zZTsKICAgIGV4aXQ7Cn0KCi8vID09PT09IOWkhOeQhiBBUEkg6K+35rGCID09PT09CmlmIChzdHJwb3MoJHBhdGgsICcvYXBpLycpID09PSAwKSB7CiAgICAkbWV0aG9kID0gJF9TRVJWRVJbJ1JFUVVFU1RfTUVUSE9EJ107CiAgICAkYm9keSA9IGZpbGVfZ2V0X2NvbnRlbnRzKCdwaHA6Ly9pbnB1dCcpOwogICAgJHF1ZXJ5X3N0cmluZyA9ICRfU0VSVkVSWydRVUVSWV9TVFJJTkcnXSA/PyAnJzsKICAgIAogICAgLy8g5ZCO56uvIEFQSSDlnLDlnYAKICAgICRiYWNrZW5kX3VybCA9ICdodHRwOi8vMTI3LjAuMC4xOjMwMDEnIC4gJHBhdGg7CiAgICBpZiAoJHF1ZXJ5X3N0cmluZykgewogICAgICAgICRiYWNrZW5kX3VybCAuPSAnPycgLiAkcXVlcnlfc3RyaW5nOwogICAgfQogICAgCiAgICAvLyDlsJ3or5Xlj5HpgIHor7fmsYLliLDlkI7nq68KICAgICRjaCA9IGN1cmxfaW5pdCgkYmFja2VuZF91cmwpOwogICAgY3VybF9zZXRvcHQoJGNoLCBDVVJMT1BUX0NVU1RPTVJFUVVFU1QsICRtZXRob2QpOwogICAgY3VybF9zZXRvcHQoJGNoLCBDVVJMT1BUX1JFVFVSTlRSQU5TRkVSLCB0cnVlKTsKICAgIGN1cmxfc2V0b3B0KCRjaCwgQ1VSTE9QVF9USU1FT1VULCAzKTsKICAgIGN1cmxfc2V0b3B0KCRjaCwgQ1VSTE9QVF9DT05ORUNUVElNRU9VVCwgMik7CiAgICAKICAgIC8vIOWkjeWItuivt+axguWktAogICAgJGhlYWRlcnMgPSBbXTsKICAgIGlmIChmdW5jdGlvbl9leGlzdHMoJ2dldGFsbGhlYWRlcnMnKSkgewogICAgICAgIGZvcmVhY2ggKGdldGFsbGhlYWRlcnMoKSBhcyAka2V5ID0+ICR2YWx1ZSkgewogICAgICAgICAgICBpZiAoIWluX2FycmF5KHN0cnRvbG93ZXIoJGtleSksIFsnaG9zdCcsICdjb25uZWN0aW9uJ10pKSB7CiAgICAgICAgICAgICAgICAkaGVhZGVyc1tdID0gIiRrZXk6ICR2YWx1ZSI7CiAgICAgICAgICAgIH0KICAgICAgICB9CiAgICB9CiAgICAKICAgIGlmICghZW1wdHkoJGJvZHkpKSB7CiAgICAgICAgY3VybF9zZXRvcHQoJGNoLCBDVVJMT1BUX1BPU1RGSUVMRFMsICRib2R5KTsKICAgICAgICBpZiAoIWluX2FycmF5KCdDb250ZW50LVR5cGU6IGFwcGxpY2F0aW9uL2pzb24nLCAkaGVhZGVycykpIHsKICAgICAgICAgICAgJGhlYWRlcnNbXSA9ICdDb250ZW50LVR5cGU6IGFwcGxpY2F0aW9uL2pzb24nOwogICAgICAgIH0KICAgIH0KICAgIAogICAgaWYgKCFlbXB0eSgkaGVhZGVycykpIHsKICAgICAgICBjdXJsX3NldG9wdCgkY2gsIENVUkxPUFRfSFRUUEhFQURFUiwgJGhlYWRlcnMpOwogICAgfQogICAgCiAgICAkcmVzcG9uc2UgPSBjdXJsX2V4ZWMoJGNoKTsKICAgICRodHRwX2NvZGUgPSBjdXJsX2dldGluZm8oJGNoLCBDVVJMSU5GT19IVFRQX0NPREUpOwogICAgJGNvbnRlbnRfdHlwZSA9IGN1cmxfZ2V0aW5mbygkY2gsIENVUkxJTkZPX0NPTlRFTlRfVFlQRSk7CiAgICAkY3VybF9lcnJvciA9IGN1cmxfZXJyb3IoJGNoKTsKICAgIGN1cmxfY2xvc2UoJGNoKTsKICAgIAogICAgLy8g5aaC5p6c6L+e5o6l6KKr5ouS57ud77yM5bCd6K+V5ZCv5Yqo5ZCO56uvCiAgICBpZiAoc3RycG9zKCRjdXJsX2Vycm9yLCAnQ29ubmVjdGlvbiByZWZ1c2VkJykgIT09IGZhbHNlIHx8ICRodHRwX2NvZGUgPT0gMCkgewogICAgICAgIC8vIOWwneivleWQr+WKqOWQjuerr++8iOS9v+eUqOe8luivkeeJiOacrO+8iQogICAgICAgICRzdGFydF9jbWQgPSAnY2QgL2hvbWUvOTk2NzM0LmNsb3Vkd2F5c2FwcHMuY29tL3Z3dndoZ3FzaGQvcHVibGljX2h0bWwgJiYgTk9ERV9FTlY9cHJvZHVjdGlvbiBub2h1cCBub2RlIHJ1bi1jb21waWxlZC1iYWNrZW5kLmpzID4gL3RtcC9iYWNrZW5kLmxvZyAyPiYxICYnOwogICAgICAgIHNoZWxsX2V4ZWMoJHN0YXJ0X2NtZCk7CiAgICAgICAgCiAgICAgICAgLy8g562J5b6F5ZCO56uv5ZCv5YqoCiAgICAgICAgc2xlZXAoNCk7CiAgICAgICAgCiAgICAgICAgLy8g6YeN5paw5bCd6K+VCiAgICAgICAgJGNoID0gY3VybF9pbml0KCRiYWNrZW5kX3VybCk7CiAgICAgICAgY3VybF9zZXRvcHQoJGNoLCBDVVJMT1BUX0NVU1RPTVJFUVVFU1QsICRtZXRob2QpOwogICAgICAgIGN1cmxfc2V0b3B0KCRjaCwgQ1VSTE9QVF9SRVRVUk5UUkFOU0ZFUiwgdHJ1ZSk7CiAgICAgICAgY3VybF9zZXRvcHQoJGNoLCBDVVJMT1BUX1RJTUVPVVQsIDUpOwogICAgICAgIGN1cmxfc2V0b3B0KCRjaCwgQ1VSTE9QVF9DT05ORUNUVElNRU9VVCwgMyk7CiAgICAgICAgCiAgICAgICAgaWYgKCFlbXB0eSgkYm9keSkpIHsKICAgICAgICAgICAgY3VybF9zZXRvcHQoJGNoLCBDVVJMT1BUX1BPU1RGSUVMRFMsICRib2R5KTsKICAgICAgICAgICAgJGhlYWRlcnNbXSA9ICdDb250ZW50LVR5cGU6IGFwcGxpY2F0aW9uL2pzb24nOwogICAgICAgIH0KICAgICAgICBpZiAoIWVtcHR5KCRoZWFkZXJzKSkgewogICAgICAgICAgICBjdXJsX3NldG9wdCgkY2gsIENVUkxPUFRfSFRUUEhFQURFUiwgJGhlYWRlcnMpOwogICAgICAgIH0KICAgICAgICAKICAgICAgICAkcmVzcG9uc2UgPSBjdXJsX2V4ZWMoJGNoKTsKICAgICAgICAkaHR0cF9jb2RlID0gY3VybF9nZXRpbmZvKCRjaCwgQ1VSTElORk9fSFRUUF9DT0RFKTsKICAgICAgICAkY29udGVudF90eXBlID0gY3VybF9nZXRpbmZvKCRjaCwgQ1VSTElORk9fQ09OVEVOVF9UWVBFKTsKICAgICAgICAkY3VybF9lcnJvciA9IGN1cmxfZXJyb3IoJGNoKTsKICAgICAgICBjdXJsX2Nsb3NlKCRjaCk7CiAgICB9CiAgICAKICAgIC8vIOi9rOWPkeWTjeW6lAogICAgaWYgKCFlbXB0eSgkY29udGVudF90eXBlKSkgewogICAgICAgIGhlYWRlcigiQ29udGVudC1UeXBlOiAkY29udGVudF90eXBlIik7CiAgICB9IGVsc2UgewogICAgICAgIGhlYWRlcignQ29udGVudC1UeXBlOiBhcHBsaWNhdGlvbi9qc29uJyk7CiAgICB9CiAgICAKICAgIGlmICgkaHR0cF9jb2RlID4gMCkgewogICAgICAgIGh0dHBfcmVzcG9uc2VfY29kZSgkaHR0cF9jb2RlKTsKICAgIH0KICAgIAogICAgaWYgKCRjdXJsX2Vycm9yKSB7CiAgICAgICAgaGVhZGVyKCdIVFRQLzEuMSA1MDMgU2VydmljZSBVbmF2YWlsYWJsZScpOwogICAgICAgIGVjaG8ganNvbl9lbmNvZGUoWydlcnJvcicgPT4gJ0JhY2tlbmQgc2VydmljZSB1bmF2YWlsYWJsZScsICdkZXRhaWxzJyA9PiAkY3VybF9lcnJvcl0pOwogICAgfSBlbHNlIHsKICAgICAgICBlY2hvICRyZXNwb25zZTsKICAgIH0KICAgIGV4aXQ7Cn0KCi8vID09PT09IOWkhOeQhumdmeaAgeaWh+S7tiA9PT09PQokcGF0aCA9IGx0cmltKCRwYXRoLCAnLycpOwokZmlsZV9leHQgPSBwYXRoaW5mbygkcGF0aCwgUEFUSElORk9fRVhURU5TSU9OKTsKJHN0YXRpY19leHRzID0gWydqcycsICdjc3MnLCAnc3ZnJywgJ3BuZycsICdqcGcnLCAnanBlZycsICdnaWYnLCAnaWNvJywgJ3dvZmYnLCAnd29mZjInLCAndHRmJywgJ2VvdCcsICdtYXAnXTsKCmlmIChpbl9hcnJheSgkZmlsZV9leHQsICRzdGF0aWNfZXh0cykpIHsKICAgICRmaWxlX3BhdGggPSBfX0RJUl9fIC4gJy9kaXN0LycgLiAkcGF0aDsKICAgICRyZWFsX3BhdGggPSByZWFscGF0aCgkZmlsZV9wYXRoKTsKICAgICRkaXN0X3BhdGggPSByZWFscGF0aChfX0RJUl9fIC4gJy9kaXN0Jyk7CiAgICAKICAgIGlmICgkcmVhbF9wYXRoICYmIHN0cnBvcygkcmVhbF9wYXRoLCAkZGlzdF9wYXRoKSA9PT0gMCAmJiBmaWxlX2V4aXN0cygkcmVhbF9wYXRoKSkgewogICAgICAgICRtaW1lX3R5cGVzID0gWwogICAgICAgICAgICAnanMnID0+ICdhcHBsaWNhdGlvbi9qYXZhc2NyaXB0JywKICAgICAgICAgICAgJ2NzcycgPT4gJ3RleHQvY3NzJywKICAgICAgICAgICAgJ3N2ZycgPT4gJ2ltYWdlL3N2Zyt4bWwnLAogICAgICAgICAgICAncG5nJyA9PiAnaW1hZ2UvcG5nJywKICAgICAgICAgICAgJ2pwZycgPT4gJ2ltYWdlL2pwZWcnLAogICAgICAgICAgICAnanBlZycgPT4gJ2ltYWdlL2pwZWcnLAogICAgICAgICAgICAnZ2lmJyA9PiAnaW1hZ2UvZ2lmJywKICAgICAgICAgICAgJ2ljbycgPT4gJ2ltYWdlL3gtaWNvbicsCiAgICAgICAgICAgICd3b2ZmJyA9PiAnZm9udC93b2ZmJywKICAgICAgICAgICAgJ3dvZmYyJyA9PiAnZm9udC93b2ZmMicsCiAgICAgICAgICAgICd0dGYnID0+ICdmb250L3R0ZicsCiAgICAgICAgICAgICdlb3QnID0+ICdhcHBsaWNhdGlvbi92bmQubXMtZm9udG9iamVjdCcsCiAgICAgICAgICAgICdtYXAnID0+ICdhcHBsaWNhdGlvbi9qc29uJwogICAgICAgIF07CiAgICAgICAgCiAgICAgICAgaGVhZGVyKCdDb250ZW50LVR5cGU6ICcgLiAoJG1pbWVfdHlwZXNbJGZpbGVfZXh0XSA/PyAnYXBwbGljYXRpb24vb2N0ZXQtc3RyZWFtJykpOwogICAgICAgIGhlYWRlcignQ2FjaGUtQ29udHJvbDogcHVibGljLCBtYXgtYWdlPTMxNTM2MDAwJyk7CiAgICAgICAgcmVhZGZpbGUoJHJlYWxfcGF0aCk7CiAgICAgICAgZXhpdDsKICAgIH0KfQoKLy8gPT09PT0gU1BBIOWbnumAgCA9PT09PQokaW5kZXhfcGF0aCA9IF9fRElSX18gLiAnL2Rpc3QvaW5kZXguaHRtbCc7CmlmIChmaWxlX2V4aXN0cygkaW5kZXhfcGF0aCkpIHsKICAgIGhlYWRlcignQ29udGVudC1UeXBlOiB0ZXh0L2h0bWw7IGNoYXJzZXQ9dXRmLTgnKTsKICAgIHJlYWRmaWxlKCRpbmRleF9wYXRoKTsKfSBlbHNlIHsKICAgIGhlYWRlcignSFRUUC8xLjAgNDA0IE5vdCBGb3VuZCcpOwogICAgZWNobyAnNDA0IC0gRmlsZSBub3QgZm91bmQnOwp9Cj8+Cg==
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h[?2004l
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h[?2004l
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h  ssh -i ~/.ssh/cloudways_rsa svs2438@172.105.217.161 'cd public_html && ls -l [Khh index.php 2>/dev/null && head -3 index.php'[?2004l
+svs2438@172.105.217.161's password: 
+
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h  scp -i ~/.ssh/cloudways_rsa /Users/wira/Downloads/WOS-manager-main/index.php [K  svs2438@172.105.217.161:public_html/index.php 2>&1 | head -20[?2004l
+svs2438@172.105.217.161's password: 
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h[?2004l
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h  pkill -9 ssh 2>/dev/null; sleep 1; echo "SSH 已終止"[?2004l
+SSH 已終止
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h[?2004l
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h  ssh -o ConnectTimeout=5 -o StrictHostKeyChecking=no -i ~/.ssh/cloudways_rsa  [Kssvs2438@172.105.217.161 'cat > ~/public_html/index.php' < /tmp/index_simple.php && echo "✓ 上傳完成" || echo "❌ 上傳失 [K敗"[?2004l
+svs2438@172.105.217.161's password: 
+
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h  ssh-keygen -p -f ~/.ssh/cloudways_rsa -N "" -P "$(cat ~/.ssh/cloudways_rsa.p [Kaass 2>/dev/null || echo '')" 2>&1 | head -3 || ssh-add -K ~/.ssh/cloudways_rsa 2>&1 | head -3[?2004l
+Key has comment 'wos-manager@cloudways'
+Your identification has been saved with the new passphrase.
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h[?2004l
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h  ssh -i ~/.ssh/cloudways_rsa svs2438@172.105.217.161 'cat > ~/public_html/ind [Keex.php' < /tmp/index_simple.php && echo "✓ index.php 已上傳到伺服器" || echo "❌ 上傳失敗"[?2004l
+svs2438@172.105.217.161's password: 
+✓ index.php 已上傳到伺服器
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h[?2004l
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h  scp -i ~/.ssh/cloudways_rsa /tmp/index_simple.php svs2438@172.105.217.161:~/ [Kppublic_html/index.php && echo "✓ 上傳成功" || echo "❌ 失敗"[?2004l
+svs2438@172.105.217.161's password: 
+Connection closed by 172.105.217.161 port 22
+scp: Connection closed
+❌ 失敗
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h[?2004l
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h  ssh -i ~/.ssh/cloudways_rsa svs2438@172.105.217.161 "cd public_html && ls -l [Khh index.php 2>/dev/null || echo '文件不存在'"[?2004l
+svs2438@172.105.217.161's password: 
+
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h  cat /Users/wira/Downloads/WOS-manager-main/index.php | ssh -i ~/.ssh/cloudwa [Kyys_rsa svs2438@172.105.217.161 'cd public_html && cat > index.php.new && mv index.php.new index.php && echo OK' 2>&1 |  [Kttail -5[?2004l
+svs2438@172.105.217.161's password: 
+
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h  ls -la ~/.ssh/cloudways_rsa* && file ~/.ssh/cloudways_rsa[?2004l
+-rw-------@ 1 wira  staff  3389  1 24 14:35 /Users/wira/.ssh/cloudways_rsa
+-rw-r--r--@ 1 wira  staff   747  1 24 08:31 /Users/wira/.ssh/cloudways_rsa.pub
+/Users/wira/.ssh/cloudways_rsa: OpenSSH private key
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h[?2004l
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h[?2004l
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h  curl -s http://wos-2438.site/api/health | head -20[?2004l
+{"status":"ok","message":"Server is running"}[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h[?2004l
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h  curl -s -X POST http://wos-2438.site/game-api/player \[?2004l
+[0m[27m[24m[J> [K[?2004h   -H "Content-Type: application/x-www-form-urlencoded" \[?2004l
+[0m[27m[24m[J> [K[?2004h   -d "fid=380768429&time=1234567890&sign=test" | jq . 2>/dev/null || curl -s -X POST http://wos-2438.site/game-api/pl [Kaayer -H "Content-Type: application/x-www-form-urlencoded" -d "fid=380768429&time=1234567890&sign=test"[?2004l
+[1;37m{
+  [0m[34;1m"code"[0m[1;37m: [0m[0;37m1[0m[1;37m,
+  [0m[34;1m"data"[0m[1;37m: [0m[1;37m[][0m[1;37m,
+  [0m[34;1m"msg"[0m[1;37m: [0m[0;32m"Sign Error"[0m[1;37m,
+  [0m[34;1m"err_code"[0m[1;37m: [0m[0;37m0[0m[1;37m
+[1;37m}[0m
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h[?2004l
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h  ls -lh dev.db 2>/dev/null || echo "本地 SQLite 不存在"[?2004l
+-rw-r--r--@ 1 wira  staff     0B  1 24 07:32 dev.db
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h[?2004l
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h  npm run prisma -- db seed 2>&1 | head -20 || echo "無 seed 文件"[?2004l
+npm error Missing script: "prisma"
+npm error
+npm error To see a list of scripts, run:
+npm error   npm run
+npm error A complete log of this run can be found in: /Users/wira/.npm/_logs/2026-01-24T06_50_56_826Z-debug-0.log
+[1m[7m%[27m[1m[0m                                                                                                                       [0m[27m[24m[Jwira@WiradeMacBook-Pro WOS-manager-main % [K[?2004h

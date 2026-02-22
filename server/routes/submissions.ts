@@ -19,7 +19,8 @@ router.post('/', authMiddleware, async (req: AuthRequest, res) => {
     if (!finalEventDate) {
       const openEvents = await EventService.getOpenEvents();
       if (openEvents.length > 0) {
-        finalEventDate = openEvents[0].eventDate;
+        // 選擇最新的開放場次（而非最舊的）
+        finalEventDate = openEvents[openEvents.length - 1].eventDate;
       }
     }
 
@@ -56,7 +57,8 @@ router.post('/admin-submit', authMiddleware, adminMiddleware, async (req: AuthRe
     if (!finalEventDate) {
       const openEvents = await EventService.getOpenEvents();
       if (openEvents.length > 0) {
-        finalEventDate = openEvents[0].eventDate;
+        // 選擇最新的開放場次（而非最舊的）
+        finalEventDate = openEvents[openEvents.length - 1].eventDate;
       }
     }
 
@@ -108,6 +110,25 @@ router.put('/:id', authMiddleware, async (req: AuthRequest, res) => {
 
     const updated = await SubmissionService.updateSubmission(idStr, {
       alliance,
+      slots,
+    });
+
+    res.json(updated);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// 管理員更新提交（可更新更多欄位）
+router.put('/admin/:id', authMiddleware, adminMiddleware, async (req: AuthRequest, res) => {
+  try {
+    const { id } = req.params;
+    const idStr = Array.isArray(id) ? id[0] : id;
+    const { alliance, playerName, slots } = req.body;
+
+    const updated = await SubmissionService.adminUpdateSubmission(idStr, {
+      alliance,
+      playerName,
       slots,
     });
 

@@ -155,7 +155,7 @@ export class SubmissionService {
       const slots = JSON.parse(submission.slotsData);
       for (const daySlot of Object.values(slots)) {
         const slot = daySlot as any;
-        if (slot?.fireSparkleCount) totalFireSparkle += slot.fireSparkleCount;
+        if (slot?.fireSparkleCount) totalFireSparkle += slot.firㄑnt;
         if (slot?.fireGemCount) totalFireGem += slot.fireGemCount;
         if (slot?.researchAccel) {
           const minutes = (slot.researchAccel.days || 0) * 1440 + (slot.researchAccel.hours || 0) * 60 + (slot.researchAccel.minutes || 0);
