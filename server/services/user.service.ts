@@ -118,10 +118,69 @@ export class UserService {
   }
 
   // 設定管理員 (by gameId)
-  static async setAdminByGameId(gameId: string, isAdmin: boolean) {
+  static async setAdminByGameId(
+    gameId: string, 
+    isAdmin: boolean, 
+    managedAlliances?: string[] | null,
+    canAssignOfficers?: boolean,
+    canManageEvents?: boolean
+  ) {
+    const data: any = { isAdmin };
+    // 如果傳入 managedAlliances，設定管理的聯盟
+    // null 表示可管理所有聯盟，空陣列表示不能管理任何聯盟
+    if (managedAlliances !== undefined) {
+      data.managedAlliances = managedAlliances === null ? null : JSON.stringify(managedAlliances);
+    }
+    // 設定權限
+    if (canAssignOfficers !== undefined) {
+      data.canAssignOfficers = canAssignOfficers;
+    }
+    if (canManageEvents !== undefined) {
+      data.canManageEvents = canManageEvents;
+    }
+    // 如果取消管理員權限，清除管理的聯盟和權限
+    if (!isAdmin) {
+      data.managedAlliances = null;
+      data.canAssignOfficers = true;
+      data.canManageEvents = true;
+    }
     return await prisma.user.update({
       where: { gameId },
-      data: { isAdmin },
+      data,
+    });
+  }
+
+  // 獲取管理員可管理的聯盟列表
+  static getManagedAlliances(user: any): string[] | null {
+    if (!user.managedAlliances) return null; // null 表示可管理所有聯盟
+    try {
+      return JSON.parse(user.managedAlliances);
+    } catch {
+      return null;
+    }
+  }
+
+  // 重設密碼 (管理員功能)
+  static async resetPassword(gameId: string, newPassword: string) {
+    return await prisma.user.update({
+      where: { gameId },
+      data: { password: this.hashPassword(newPassword) },
+    });
+  }
+
+  // 會員自行變更密碼 (需驗證舊密碼)
+  static async changePassword(gameId: string, oldPassword: string, newPassword: string) {
+    const user = await prisma.user.findUnique({
+      where: { gameId },
+    });
+
+    if (!user || user.password !== this.hashPassword(oldPassword)) {
+      throw new Error('Current password is incorrect');
+    }
+
+    return await prisma.user.update({
+      where: { gameId },
+      data: { password: this.hashPassword(newPassword) },
     });
   }
 
@@ -141,7 +200,7 @@ export class UserService {
 
   // 取得使用者資料
   static async getUserById(id: string) {
-    return await prisma.user.findUnique({
+    const user = await prisma.user.findUnique({
       where: { id },
       select: {
         id: true,
@@ -153,11 +212,19 @@ export class UserService {
         coordinateY: true,
         powerPoints: true,
         isAdmin: true,
+        managedAlliances: true,
+        canAssignOfficers: true,
+        canManageEvents: true,
         parentUserId: true,
         createdAt: true,
         updatedAt: true,
       },
     });
+    // 解析 managedAlliances JSON 字串
+    return user ? {
+      ...user,
+      managedAlliances: this.getManagedAlliances(user),
+    } : null;
   }
 
   // 透過 gameId 取得使用者
@@ -209,17 +276,25 @@ export class UserService {
 
   // 取得所有使用者 (僅管理員)
   static async getAllUsers() {
-    return await prisma.user.findMany({
+    const users = await prisma.user.findMany({
       select: {
         id: true,
         gameId: true,
         nickname: true,
         allianceName: true,
         isAdmin: true,
+        managedAlliances: true,
+        canAssignOfficers: true,
+        canManageEvents: true,
         createdAt: true,
       },
       orderBy: { createdAt: 'desc' },
     });
+    // 解析 managedAlliances JSON 字串
+    return users.map(user => ({
+      ...user,
+      managedAlliances: this.getManagedAlliances(user),
+    }));
   }
 
   // ======== 子帳號管理 ========

@@ -4,6 +4,29 @@ import { authMiddleware } from '../middleware/auth';
 
 const router = Router();
 
+// 公開 API：取得最近的場次日期（不需要登入）- 必須放在 /:eventDate 之前
+router.get('/public-dates', async (req: Request, res: Response) => {
+  try {
+    const dates = await OfficerService.getEventDates();
+    res.json({ dates });
+  } catch (error) {
+    console.error('Error fetching public event dates:', error);
+    res.status(500).json({ error: 'Failed to fetch event dates' });
+  }
+});
+
+// 公開 API：取得指定日期的官職配置（不需要登入）- 必須放在 /:eventDate 之前
+router.get('/public/:eventDate', async (req: Request, res: Response) => {
+  try {
+    const eventDate = Array.isArray(req.params.eventDate) ? req.params.eventDate[0] : req.params.eventDate;
+    const assignments = await OfficerService.getAssignmentsByDate(eventDate);
+    res.json(assignments);
+  } catch (error) {
+    console.error('Error fetching public assignments:', error);
+    res.status(500).json({ error: 'Failed to fetch assignments' });
+  }
+});
+
 // 取得所有場次日期
 router.get('/dates', authMiddleware, async (req: Request, res: Response) => {
   try {

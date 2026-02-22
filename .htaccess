@@ -1,0 +1,17 @@
+<IfModule mod_rewrite.c>
+RewriteEngine On
+
+# 靜態文件 - 使用 serve-assets.php
+RewriteRule ^assets/(.*)$ serve-assets.php [L,QSA]
+
+# API 路由
+RewriteRule ^api/ index.php [L,QSA]
+
+# 遊戲 API 路由
+RewriteRule ^game-api/ index.php [L,QSA]
+
+# SPA 回退 - 所有其他路由到 index.html
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^ index.php [L]
+</IfModule>

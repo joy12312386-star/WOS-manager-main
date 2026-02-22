@@ -972,7 +972,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ user, player
           playerName: confirmData.playerName,
           alliance: confirmData.alliance,
           slots: confirmData.slots,
-          eventDate: selectedEventDate || undefined
+          eventDate: confirmData.eventDate
         });
         addToast(t('submissionSuccess'), 'success');
 

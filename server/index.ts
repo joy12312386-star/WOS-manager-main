@@ -11,6 +11,7 @@ import submissionRoutes from './routes/submissions';
 import statisticsRoutes from './routes/statistics';
 import officerRoutes from './routes/officers';
 import eventRoutes from './routes/events';
+import mapRoutes from './routes/maps';
 
 dotenv.config();
 
@@ -21,7 +22,21 @@ const PORT = parseInt(process.env.SERVER_PORT || process.env.PORT || '3001', 10)
 // Middleware
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+    origin: (origin, callback) => {
+      const allowedOrigins = [
+        'http://localhost:5173',
+        'http://localhost:3000',
+        'https://wos-2438.site',
+        'https://www.wos-2438.site',
+        process.env.FRONTEND_URL,
+      ].filter(Boolean);
+      
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(null, true); // Allow all for now
+      }
+    },
     credentials: true,
   })
 );
@@ -37,6 +52,7 @@ app.use('/api/submissions', submissionRoutes);
 app.use('/api/statistics', statisticsRoutes);
 app.use('/api/officers', officerRoutes);
 app.use('/api/events', eventRoutes);
+app.use('/api/maps', mapRoutes);
 
 // Health check
 app.get('/api/health', (req: Request, res: Response) => {
@@ -59,7 +75,7 @@ async function main() {
     // Initialize super admin
     await UserService.initializeSuperAdmin();
 
-    const HOST = process.env.HOST || 'localhost';
+    const HOST = process.env.HOST || '0.0.0.0';
     app.listen(PORT, HOST, () => {
       console.log(`🚀 Server is running at http://${HOST}:${PORT}`);
       console.log(`📊 Database: ${process.env.DATABASE_URL}`);

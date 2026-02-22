@@ -1,5 +1,0 @@
--- AlterTable
-ALTER TABLE "User" ADD COLUMN "avatarImage" TEXT;
-ALTER TABLE "User" ADD COLUMN "kid" INTEGER;
-ALTER TABLE "User" ADD COLUMN "nickname" TEXT;
-ALTER TABLE "User" ADD COLUMN "stoveLv" INTEGER;

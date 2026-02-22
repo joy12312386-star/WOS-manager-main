@@ -1,9 +1,18 @@
-// API endpoint - use relative path for production, localhost for development
+// API endpoint - use api-proxy.php for production, localhost for development
 const API_URL = typeof window !== 'undefined' && window.location.hostname === 'localhost'
   ? 'http://localhost:3001/api'
-  : '/api';
+  : '';
+const API_PROXY = '/api-proxy.php?path=';
 const TOKEN_KEY = 'wos_token';
 const USER_KEY = 'wos_user';
+
+// Helper to construct API URL
+function getApiUrl(endpoint: string): string {
+  if (API_URL) {
+    return `${API_URL}${endpoint}`;
+  }
+  return `${API_PROXY}${endpoint.substring(1)}`;
+}
 
 export interface User {
   id: string;
@@ -11,6 +20,9 @@ export interface User {
   allianceName?: string;
   allianceId?: string;
   isAdmin?: boolean;
+  managedAlliances?: string[] | null;
+  canAssignOfficers?: boolean;
+  canManageEvents?: boolean;
 }
 
 export interface LinkedAccount {
@@ -39,7 +51,7 @@ export class AuthService {
   // 检查用户是否已注册
   static async userExists(gameId: string): Promise<boolean> {
     try {
-      const response = await fetch(`${API_URL}/auth/check-user/${gameId}`);
+      const response = await fetch(getApiUrl(`/auth/check-user/${gameId}`));
       if (!response.ok) throw new Error('Failed to check user');
       const data = await response.json();
       return data.exists;
@@ -53,7 +65,7 @@ export class AuthService {
   // 登入
   static async login(gameId: string, password: string): Promise<User | null> {
     try {
-      const response = await fetch(`${API_URL}/auth/login`, {
+      const response = await fetch(getApiUrl(`/auth/login`), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ gameId, password })
@@ -65,10 +77,12 @@ export class AuthService {
       }
 
       const data = await response.json();
+      console.log('✅ Login response data.user:', data.user);
       
       // 保存 token 和用户信息
       localStorage.setItem(TOKEN_KEY, data.token);
       localStorage.setItem(USER_KEY, JSON.stringify(data.user));
+      console.log('✅ Saved to localStorage - USER_KEY:', JSON.stringify(data.user));
 
       return data.user;
     } catch (error) {
@@ -90,7 +104,7 @@ export class AuthService {
     }
   ): Promise<User | null> {
     try {
-      const response = await fetch(`${API_URL}/auth/register`, {
+      const response = await fetch(getApiUrl(`/auth/register`), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ gameId, password, allianceName, playerData })
@@ -116,7 +130,9 @@ export class AuthService {
 
   static getCurrentUser(): User | null {
     const stored = localStorage.getItem(USER_KEY);
-    return stored ? JSON.parse(stored) : null;
+    const user = stored ? JSON.parse(stored) : null;
+    console.log('📦 getCurrentUser from localStorage:', user);
+    return user;
   }
 
   // 從伺服器刷新用戶資料（包括 isAdmin 狀態）
@@ -125,13 +141,35 @@ export class AuthService {
       const token = this.getToken();
       if (!token) return null;
 
-      const response = await fetch(`${API_URL}/auth/me`, {
+      console.log('🔄 refreshUserData - 從伺服器刷新用戶資料');
+      const response = await fetch(getApiUrl(`/auth/me`), {
         headers: { 'Authorization': `Bearer ${token}` }
       });
 
-      if (!response.ok) return null;
+      console.log('🔄 refreshUserData - response status:', response.status);
+      if (!response.ok) {
+        console.warn('🔄 refreshUserData - response not ok, returning null');
+        // Token 無效時清除本地資料
+        if (response.status === 401) {
+          console.warn('🔄 refreshUserData - Token 無效，執行登出');
+          this.logout();
+        }
+        return null;
+      }
 
       const serverUser = await response.json();
+      console.log('🔄 refreshUserData - serverUser from API:', serverUser);
+      
+      // 檢查是否有錯誤回應（例如 token 無效）
+      if (serverUser && serverUser.error) {
+        console.warn('🔄 refreshUserData - API 回傳錯誤:', serverUser.error);
+        // Token 無效時清除本地資料
+        if (serverUser.error === 'Invalid token' || serverUser.error === 'Token expired') {
+          console.warn('🔄 refreshUserData - Token 無效，執行登出');
+          this.logout();
+        }
+        return null;
+      }
       
       // 更新本地存儲的用戶資料
       const currentUser = this.getCurrentUser();
@@ -141,10 +179,15 @@ export class AuthService {
           isAdmin: serverUser.isAdmin,
           allianceName: serverUser.allianceName || currentUser.allianceName,
           nickname: serverUser.nickname || currentUser.nickname,
+          managedAlliances: serverUser.managedAlliances,
+          canAssignOfficers: serverUser.canAssignOfficers,
+          canManageEvents: serverUser.canManageEvents,
         };
+        console.log('🔄 refreshUserData - updatedUser:', updatedUser);
         localStorage.setItem(USER_KEY, JSON.stringify(updatedUser));
         return updatedUser;
       }
+      console.log('🔄 refreshUserData - returning serverUser directly:', serverUser);
       return serverUser;
     } catch (error) {
       console.error('Error refreshing user data:', error);
@@ -165,7 +208,8 @@ export class AuthService {
       const token = this.getToken();
       if (!token) return false;
 
-      const response = await fetch(`${API_URL}/auth/profile`, {
+      const url = getApiUrl('/auth/profile');
+      const response = await fetch(url, {
         method: 'PUT',
         headers: { 
           'Authorization': `Bearer ${token}`,
@@ -201,7 +245,8 @@ export class AuthService {
       const token = this.getToken();
       if (!token) return false;
 
-      const response = await fetch(`${API_URL}/auth/player-data`, {
+      const url = getApiUrl('/auth/player-data');
+      const response = await fetch(url, {
         method: 'PUT',
         headers: { 
           'Authorization': `Bearer ${token}`,
@@ -229,7 +274,8 @@ export class AuthService {
   static async getAllUsers(): Promise<any[]> {
     try {
       const token = this.getToken();
-      const response = await fetch(`${API_URL}/auth/users`, {
+      const url = getApiUrl('/auth/users');
+      const response = await fetch(url, {
         headers: { 
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -248,7 +294,8 @@ export class AuthService {
   static async deleteUser(userId: string): Promise<boolean> {
     try {
       const token = this.getToken();
-      const response = await fetch(`${API_URL}/auth/users/${userId}`, {
+      const url = getApiUrl(`/auth/users/${userId}`);
+      const response = await fetch(url, {
         method: 'DELETE',
         headers: { 
           'Authorization': `Bearer ${token}`,
@@ -274,7 +321,8 @@ export class AuthService {
       const token = this.getToken();
       if (!token) return null;
 
-      const response = await fetch(`${API_URL}/auth/sub-accounts`, {
+      const url = getApiUrl('/auth/sub-accounts');
+      const response = await fetch(url, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
 
@@ -301,7 +349,8 @@ export class AuthService {
       const token = this.getToken();
       if (!token) return { success: false, message: '未登入' };
 
-      const response = await fetch(`${API_URL}/auth/sub-accounts`, {
+      const url = getApiUrl('/auth/sub-accounts');
+      const response = await fetch(url, {
         method: 'POST',
         headers: { 
           'Authorization': `Bearer ${token}`,
@@ -329,7 +378,8 @@ export class AuthService {
       const token = this.getToken();
       if (!token) return null;
 
-      const response = await fetch(`${API_URL}/auth/switch-account`, {
+      const url = getApiUrl('/auth/switch-account');
+      const response = await fetch(url, {
         method: 'POST',
         headers: { 
           'Authorization': `Bearer ${token}`,
@@ -359,7 +409,8 @@ export class AuthService {
       const token = this.getToken();
       if (!token) return false;
 
-      const response = await fetch(`${API_URL}/auth/sub-accounts/${gameId}`, {
+      const url = getApiUrl(`/auth/sub-accounts/${gameId}`);
+      const response = await fetch(url, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -372,16 +423,23 @@ export class AuthService {
   }
 
   // 设置管理员（管理员功能）
-  static async setAdmin(userIdOrGameId: string, isAdmin: boolean): Promise<User | null> {
+  static async setAdmin(
+    userIdOrGameId: string, 
+    isAdmin: boolean, 
+    managedAlliances?: string[] | null,
+    canAssignOfficers?: boolean,
+    canManageEvents?: boolean
+  ): Promise<User | null> {
     try {
       const token = this.getToken();
-      const response = await fetch(`${API_URL}/auth/users/${userIdOrGameId}/admin`, {
+      const url = getApiUrl(`/auth/users/${userIdOrGameId}/admin`);
+      const response = await fetch(url, {
         method: 'PUT',
         headers: { 
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ isAdmin })
+        body: JSON.stringify({ isAdmin, managedAlliances, canAssignOfficers, canManageEvents })
       });
       if (!response.ok) return null;
       const data = await response.json();
@@ -391,10 +449,66 @@ export class AuthService {
       return null;
     }
   }
+
+  // 重設密碼（管理員功能）
+  static async resetPassword(gameId: string, newPassword: string): Promise<boolean> {
+    try {
+      const token = this.getToken();
+      const url = getApiUrl(`/auth/users/${gameId}/reset-password`);
+      const response = await fetch(url, {
+        method: 'PUT',
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ newPassword })
+      });
+      return response.ok;
+    } catch (error) {
+      console.error('Error resetting password:', error);
+      return false;
+    }
+  }
+
+  // 會員自行變更密碼
+  static async changePassword(oldPassword: string, newPassword: string): Promise<{ success: boolean; message: string }> {
+    try {
+      const token = this.getToken();
+      if (!token) return { success: false, message: '未登入' };
+
+      const url = getApiUrl('/auth/change-password');
+      const response = await fetch(url, {
+        method: 'PUT',
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ oldPassword, newPassword })
+      });
+
+      const data = await response.json();
+      
+      if (!response.ok) {
+        return { success: false, message: data.error || '變更密碼失敗' };
+      }
+
+      return { success: true, message: data.message || '密碼已變更' };
+    } catch (error) {
+      console.error('Error changing password:', error);
+      return { success: false, message: '網路錯誤' };
+    }
+  }
 }
 
 export class FormService {
-  private static readonly API_URL = 'http://localhost:3001/api';
+  private static getApiUrl(endpoint: string): string {
+    // 動態生成 API URL，在生產環境使用代理
+    if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
+      return `http://localhost:3001/api${endpoint}`;
+    }
+    // 生產環境：使用 PHP 代理
+    return `/api-proxy.php?path=${endpoint.substring(1)}`;
+  }
 
   static async submitForm(data: {
     userId: string;
@@ -403,10 +517,11 @@ export class FormService {
     playerName: string;
     alliance: string;
     slots: any;
+    eventDate?: string;
   }): Promise<any> {
     try {
       const token = AuthService.getToken();
-      const response = await fetch(`${this.API_URL}/submissions`, {
+      const response = await fetch(this.getApiUrl(`/submissions`), {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -435,10 +550,11 @@ export class FormService {
     playerName: string;
     alliance: string;
     slots: any;
+    eventDate?: string;
   }): Promise<any> {
     try {
       const token = AuthService.getToken();
-      const response = await fetch(`${this.API_URL}/submissions/admin-submit`, {
+      const response = await fetch(this.getApiUrl(`/submissions/admin-submit`), {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -465,7 +581,7 @@ export class FormService {
   }): Promise<any> {
     try {
       const token = AuthService.getToken();
-      const response = await fetch(`${this.API_URL}/submissions/${submissionId}`, {
+      const response = await fetch(this.getApiUrl(`/submissions/${submissionId}`), {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -486,12 +602,41 @@ export class FormService {
     }
   }
 
+  // 管理員更新提交（可更新更多欄位）
+  static async adminUpdateSubmission(submissionId: string, data: {
+    alliance?: string;
+    playerName?: string;
+    slots?: any;
+  }): Promise<any> {
+    try {
+      const token = AuthService.getToken();
+      const response = await fetch(this.getApiUrl(`/submissions/admin/${submissionId}`), {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data)
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to update submission');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error admin updating submission:', error);
+      throw error;
+    }
+  }
+
   static async getSubmissionsByUser(userId: string): Promise<any[]> {
     try {
       const token = AuthService.getToken();
       console.log('📡 FormService.getSubmissionsByUser - userId:', userId);
       console.log('📡 FormService.getSubmissionsByUser - token:', token ? 'exists' : 'missing');
-      const response = await fetch(`${this.API_URL}/submissions/my`, {
+      const response = await fetch(this.getApiUrl(`/submissions/my`), {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -517,7 +662,7 @@ export class FormService {
   static async deleteSubmission(submissionId: string): Promise<boolean> {
     try {
       const token = AuthService.getToken();
-      const response = await fetch(`${this.API_URL}/submissions/${submissionId}`, {
+      const response = await fetch(this.getApiUrl(`/submissions/${submissionId}`), {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -535,7 +680,7 @@ export class FormService {
   static async getAllSubmissions(): Promise<any[]> {
     try {
       const token = AuthService.getToken();
-      const response = await fetch(`${this.API_URL}/submissions/all`, {
+      const response = await fetch(this.getApiUrl(`/submissions/all`), {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -556,13 +701,19 @@ export class FormService {
 
 // 官職配置服務
 export class OfficerConfigService {
-  private static API_URL = 'http://localhost:3001/api/officers';
+  private static getApiUrl(endpoint: string): string {
+    // 動態生成 API URL
+    if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
+      return `http://localhost:3001/api${endpoint}`;
+    }
+    return `/api-proxy.php?path=${endpoint.substring(1)}`;
+  }
 
   // 取得所有場次日期
   static async getEventDates(): Promise<string[]> {
     try {
       const token = AuthService.getToken();
-      const response = await fetch(`${this.API_URL}/dates`, {
+      const response = await fetch(this.getApiUrl(`/officers/dates`), {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -586,8 +737,8 @@ export class OfficerConfigService {
     try {
       const token = AuthService.getToken();
       console.log('OfficerConfigService.getAssignments - token:', token ? 'exists' : 'null');
-      console.log('OfficerConfigService.getAssignments - URL:', `${this.API_URL}/${eventDate}`);
-      const response = await fetch(`${this.API_URL}/${eventDate}`, {
+      console.log('OfficerConfigService.getAssignments - URL:', this.getApiUrl(`/officers/${eventDate}`));
+      const response = await fetch(this.getApiUrl(`/officers/${eventDate}`), {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -614,7 +765,7 @@ export class OfficerConfigService {
   static async saveAssignments(eventDate: string, utcOffset: string, officers: Record<string, any[]>): Promise<boolean> {
     try {
       const token = AuthService.getToken();
-      const response = await fetch(`${this.API_URL}/save`, {
+      const response = await fetch(this.getApiUrl(`/officers/save`), {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -634,7 +785,7 @@ export class OfficerConfigService {
   static async deleteAssignments(eventDate: string): Promise<boolean> {
     try {
       const token = AuthService.getToken();
-      const response = await fetch(`${this.API_URL}/${eventDate}`, {
+      const response = await fetch(this.getApiUrl(`/events/${eventDate}`), {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -668,13 +819,19 @@ export interface Event {
 }
 
 export class EventService {
-  private static API_URL = 'http://localhost:3001/api/events';
+  private static getApiUrl(endpoint: string): string {
+    // 動態生成 API URL
+    if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
+      return `http://localhost:3001/api${endpoint}`;
+    }
+    return `/api-proxy.php?path=${endpoint.substring(1)}`;
+  }
 
   // 取得所有場次（管理員用）
   static async getAllEvents(): Promise<Event[]> {
     try {
       const token = AuthService.getToken();
-      const response = await fetch(`${this.API_URL}/all`, {
+      const response = await fetch(this.getApiUrl(`/events/all`), {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -696,7 +853,7 @@ export class EventService {
   // 取得開放報名的場次
   static async getOpenEvents(): Promise<Event[]> {
     try {
-      const response = await fetch(`${this.API_URL}/open`);
+      const response = await fetch(this.getApiUrl(`/events/open`));
 
       if (!response.ok) {
         return [];
@@ -713,7 +870,7 @@ export class EventService {
   // 取得所有公開可見的場次（玩家用）
   static async getPublicEvents(): Promise<Event[]> {
     try {
-      const response = await fetch(`${this.API_URL}/public`);
+      const response = await fetch(this.getApiUrl(`/events/public`));
 
       if (!response.ok) {
         return [];
@@ -730,7 +887,7 @@ export class EventService {
   // 取得單一場次
   static async getEvent(eventDate: string): Promise<Event | null> {
     try {
-      const response = await fetch(`${this.API_URL}/${eventDate}`);
+      const response = await fetch(this.getApiUrl(`/events/${eventDate}`));
 
       if (!response.ok) {
         return null;
@@ -746,7 +903,7 @@ export class EventService {
   // 檢查是否可以報名
   static async canRegister(eventDate: string): Promise<{ canRegister: boolean; reason?: string }> {
     try {
-      const response = await fetch(`${this.API_URL}/can-register/${eventDate}`);
+      const response = await fetch(this.getApiUrl(`/events/can-register/${eventDate}`));
 
       if (!response.ok) {
         return { canRegister: false, reason: '無法檢查報名狀態' };
@@ -770,7 +927,7 @@ export class EventService {
   }): Promise<{ success: boolean; event?: Event; error?: string }> {
     try {
       const token = AuthService.getToken();
-      const response = await fetch(`${this.API_URL}/create`, {
+      const response = await fetch(this.getApiUrl(`/events/create`), {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -795,7 +952,7 @@ export class EventService {
   static async updateEventStatus(eventDate: string, status: 'open' | 'closed' | 'disabled'): Promise<boolean> {
     try {
       const token = AuthService.getToken();
-      const response = await fetch(`${this.API_URL}/${eventDate}/status`, {
+      const response = await fetch(this.getApiUrl(`/events/${eventDate}/status`), {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -825,7 +982,7 @@ export class EventService {
       const token = AuthService.getToken();
       
       // 使用 eventDate 作為 URL 參數的唯一標識
-      const response = await fetch(`${this.API_URL}/${eventDateOrId}`, {
+      const response = await fetch(this.getApiUrl(`/events/${eventDateOrId}`), {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -851,7 +1008,7 @@ export class EventService {
   static async deleteEvent(eventDate: string): Promise<boolean> {
     try {
       const token = AuthService.getToken();
-      const response = await fetch(`${this.API_URL}/${eventDate}`, {
+      const response = await fetch(this.getApiUrl(`/events/${eventDate}`), {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -869,7 +1026,7 @@ export class EventService {
   // 取得場次的每日活動配置
   static async getDayConfig(eventDate: string): Promise<Record<string, ActivityType> | null> {
     try {
-      const response = await fetch(`${this.API_URL}/${eventDate}/day-config`);
+      const response = await fetch(this.getApiUrl(`/events/${eventDate}/day-config`));
 
       if (!response.ok) {
         return null;
@@ -887,7 +1044,7 @@ export class EventService {
   static async updateDayConfig(eventDate: string, dayConfig: Record<string, ActivityType>): Promise<boolean> {
     try {
       const token = AuthService.getToken();
-      const response = await fetch(`${this.API_URL}/${eventDate}/day-config`, {
+      const response = await fetch(this.getApiUrl(`/events/${eventDate}/day-config`), {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -906,7 +1063,7 @@ export class EventService {
   // 取得預設配置
   static async getDefaultDayConfig(): Promise<Record<string, ActivityType>> {
     try {
-      const response = await fetch(`${this.API_URL}/config/default`);
+      const response = await fetch(this.getApiUrl(`/events/config/default`));
 
       if (!response.ok) {
         return {
@@ -955,5 +1112,172 @@ export class DebugService {
 
   static async getAllSubmissions(): Promise<any[]> {
     return FormService.getAllSubmissions();
+  }
+}
+
+// 地圖相關介面
+export interface AllianceMapItem {
+  id: string;
+  title: string;
+  status: 'open' | 'closed';
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AllianceMapDetail extends AllianceMapItem {
+  alliances: { id: string; name: string; color: string }[];
+  gridData: Record<string, string>;
+  gridOwners: Record<string, string>;
+}
+
+export class MapService {
+  private static getApiUrl(endpoint: string): string {
+    if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
+      return `http://localhost:3001/api${endpoint}`;
+    }
+    return `/api-proxy.php?path=${endpoint.substring(1)}`;
+  }
+
+  // 獲取所有地圖列表
+  static async getAllMaps(): Promise<AllianceMapItem[]> {
+    try {
+      const token = AuthService.getToken();
+      const response = await fetch(this.getApiUrl('/maps'), {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        return [];
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching maps:', error);
+      return [];
+    }
+  }
+
+  // 獲取單個地圖詳情
+  static async getMap(id: string): Promise<AllianceMapDetail | null> {
+    try {
+      const token = AuthService.getToken();
+      const response = await fetch(this.getApiUrl(`/maps/${id}`), {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        return null;
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching map:', error);
+      return null;
+    }
+  }
+
+  // 創建新地圖
+  static async createMap(data: {
+    title: string;
+    alliances?: { id: string; name: string; color: string }[];
+    gridData?: Record<string, string>;
+    gridOwners?: Record<string, string>;
+    status?: 'open' | 'closed';
+  }): Promise<AllianceMapDetail | null> {
+    try {
+      const token = AuthService.getToken();
+      const response = await fetch(this.getApiUrl('/maps'), {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data)
+      });
+
+      if (!response.ok) {
+        return null;
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error creating map:', error);
+      return null;
+    }
+  }
+
+  // 更新地圖
+  static async updateMap(id: string, data: {
+    title?: string;
+    alliances?: { id: string; name: string; color: string }[];
+    gridData?: Record<string, string>;
+    gridOwners?: Record<string, string>;
+    status?: 'open' | 'closed';
+  }): Promise<AllianceMapDetail | null> {
+    try {
+      const token = AuthService.getToken();
+      const response = await fetch(this.getApiUrl(`/maps/${id}`), {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data)
+      });
+
+      if (!response.ok) {
+        return null;
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error updating map:', error);
+      return null;
+    }
+  }
+
+  // 更新地圖狀態
+  static async updateMapStatus(id: string, status: 'open' | 'closed'): Promise<boolean> {
+    try {
+      const token = AuthService.getToken();
+      const response = await fetch(this.getApiUrl(`/maps/${id}`), {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ status })
+      });
+
+      return response.ok;
+    } catch (error) {
+      console.error('Error updating map status:', error);
+      return false;
+    }
+  }
+
+  // 刪除地圖
+  static async deleteMap(id: string): Promise<boolean> {
+    try {
+      const token = AuthService.getToken();
+      const response = await fetch(this.getApiUrl(`/maps/${id}`), {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      return response.ok;
+    } catch (error) {
+      console.error('Error deleting map:', error);
+      return false;
+    }
   }
 }

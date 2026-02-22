@@ -3,6 +3,8 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import LoginPage from './components/LoginPage';
 import RegistrationForm from './components/RegistrationForm';
 import AdminDashboard from './components/AdminDashboard';
+import PublicOfficerView from './components/PublicOfficerView';
+import PublicMapView from './components/PublicMapView';
 import { LanguageSwitcher } from './components/LanguageSwitcher';
 import { I18nProvider } from './i18n/I18nProvider';
 import { ToastProvider } from './components/ui/Toast';
@@ -55,7 +57,8 @@ const ProtectedRoute: React.FC<{
   if (requireAdmin && !currentUser.isAdmin) {
     console.warn('🔒 ProtectedRoute: 用戶不是管理員，無法訪問管理員頁面', { 
       gameId: currentUser.gameId, 
-      isAdmin: currentUser.isAdmin 
+      isAdmin: currentUser.isAdmin,
+      currentUser: currentUser
     });
     return <Navigate to="/form" replace />;
   }
@@ -104,47 +107,54 @@ const AppContent: React.FC = () => {
   // Check if user is already logged in
   useEffect(() => {
     const initializeUser = async () => {
-      const user = AuthService.getCurrentUser();
-      
-      if (user) {
-        try {
-          // 從伺服器獲取最新的用戶資料（包括 isAdmin 狀態）
-          let latestUser = user;
-          try {
-            const serverUser = await AuthService.refreshUserData();
-            if (serverUser) {
-              latestUser = serverUser;
+      try {
+        const token = AuthService.getToken();
+        if (token) {
+          // 從伺服器刷新用戶資料（包括 isAdmin）
+          console.log('🔧 App.tsx - 開始刷新用戶資料');
+          let latestUser = await AuthService.refreshUserData();
+          console.log('🔧 App.tsx - refreshUserData 返回:', latestUser);
+          
+          // 如果刷新失敗，回退到 localStorage 中的用戶資料
+          if (!latestUser) {
+            console.warn('⚠️ 無法從伺服器刷新用戶資料，使用本地存儲的資料');
+            latestUser = AuthService.getCurrentUser();
+            console.log('🔧 App.tsx - 從 localStorage 回退的用戶:', latestUser);
+          }
+          
+          if (latestUser) {
+            // 嘗試重新獲取玩家資料，但失敗時不登出
+            let player: Player | null = null;
+            try {
+              player = await fetchPlayer(latestUser.gameId);
+            } catch (fetchError) {
+              console.warn('無法從遊戲 API 獲取玩家資料:', fetchError);
+              // 使用基本的 player 資料
+              player = {
+                fid: latestUser.gameId,
+                nickname: latestUser.gameId,
+                kid: 0,
+                stove_lv: 0,
+                stove_lv_content: '',
+                avatar_image: '',
+              };
             }
-          } catch (refreshError) {
-            console.warn('無法從伺服器獲取最新用戶資料，使用快取資料:', refreshError);
+            
+            console.log('✅ 用戶初始化完成:', { gameId: latestUser.gameId, isAdmin: latestUser.isAdmin });
+            setCurrentUser(latestUser as any);
+            setCurrentPlayer(player);
+          } else {
+            // 用戶資料無效，登出
+            console.warn('⚠️ 用戶資料無效，執行登出');
+            AuthService.logout();
           }
-          
-          // 嘗試重新獲取玩家資料，但失敗時不登出
-          let player: Player | null = null;
-          try {
-            player = await fetchPlayer(latestUser.gameId);
-          } catch (fetchError) {
-            console.warn('無法從遊戲 API 獲取玩家資料，使用快取資料:', fetchError);
-            // 使用基本的 player 資料
-            player = {
-              fid: latestUser.gameId,
-              nickname: latestUser.gameId,
-              kid: 0,
-              stove_lv: 0,
-              stove_lv_content: '',
-              avatar_image: '',
-            };
-          }
-          
-          setCurrentUser(latestUser as any);
-          setCurrentPlayer(player);
-        } catch (error) {
-          console.error('Failed to initialize user:', error);
-          // 如果初始化失敗，登出用戶
-          AuthService.logout();
         }
+      } catch (error) {
+        console.error('Failed to initialize user:', error);
+        AuthService.logout();
+      } finally {
+        setIsLoading(false);
       }
-      setIsLoading(false);
     };
     initializeUser();
   }, []);
@@ -165,12 +175,41 @@ const AppContent: React.FC = () => {
     <AuthContext.Provider value={{ currentUser, currentPlayer, isLoading, handleLoginSuccess, handleLogout }}>
       <Router>
         <Routes>
-          {/* 登入頁面 */}
-          <Route path="/" element={<LoginRoute onLoginSuccess={handleLoginSuccess} />} />
+          {/* 登入頁面 & 玩家信息主頁面 */}
+          <Route 
+            path="/" 
+            element={
+              currentUser ? (
+                // 已登入 - 顯示玩家信息主頁面
+                <ProtectedRoute>
+                  {(auth) => (
+                    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+                      <div className="absolute top-4 right-4 z-50">
+                        <LanguageSwitcher />
+                      </div>
+                      {auth.currentPlayer && auth.currentUser && (
+                        <RegistrationForm
+                          user={auth.currentUser}
+                          playerData={auth.currentPlayer}
+                          onLogout={auth.handleLogout}
+                          onSwitchToManager={() => {
+                            window.location.href = '/manager';
+                          }}
+                        />
+                      )}
+                    </div>
+                  )}
+                </ProtectedRoute>
+              ) : (
+                // 未登入 - 顯示登入頁面
+                <LoginRoute onLoginSuccess={handleLoginSuccess} />
+              )
+            } 
+          />
           
           {/* 報名表單頁面 */}
           <Route
-            path="/form"
+            path="/register"
             element={
               <ProtectedRoute>
                 {(auth) => (
@@ -205,13 +244,27 @@ const AppContent: React.FC = () => {
                       onLogout={auth.handleLogout} 
                       currentUser={auth.currentUser} 
                       onBackToPlayer={() => {
-                        window.location.href = '/form';
+                        // 使用 React Router 導航，避免頁面刷新觸發快取問題
+                        window.history.pushState({}, '', '/');
+                        window.location.reload();
                       }}
                     />
                   )
                 )}
               </ProtectedRoute>
             }
+          />
+          
+          {/* 公開官職查詢頁面（不需登入） */}
+          <Route
+            path="/officers"
+            element={<PublicOfficerView />}
+          />
+          
+          {/* 公開地圖查看頁面（不需登入） */}
+          <Route
+            path="/map/:id"
+            element={<PublicMapView />}
           />
           
           {/* 其他路由導向首頁 */}

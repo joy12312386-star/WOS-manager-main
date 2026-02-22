@@ -19,6 +19,26 @@ export default defineConfig({
         target: 'http://localhost:3001',
         changeOrigin: true,
       },
+      '/auth': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
+      '/submissions': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
+      '/events': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
+      '/officers': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
+      '/statistics': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
       '/game-api': {
         target: 'https://wos-giftcode-api.centurygame.com',
         changeOrigin: true,

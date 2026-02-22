@@ -1,7 +1,10 @@
 import CryptoJS from 'crypto-js';
 import { Player } from '../../types';
 
-const GAME_API_URL = '/game-api/player';
+// 生產環境使用 game-api.php，開發環境使用本地代理
+const GAME_API_URL = import.meta.env.DEV 
+  ? '/game-api/player'
+  : '/game-api.php';
 
 export const fetchPlayer = async (fid: string): Promise<Player> => {
   const timestamp = Math.floor(Date.now() / 1000);

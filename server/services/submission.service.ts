@@ -127,6 +127,31 @@ export class SubmissionService {
     };
   }
 
+  // 管理員更新提交（可更新更多欄位）
+  static async adminUpdateSubmission(
+    submissionId: string,
+    data: {
+      alliance?: string;
+      playerName?: string;
+      slots?: any;
+    }
+  ) {
+    const updateData: any = {};
+    if (data.alliance) updateData.alliance = data.alliance;
+    if (data.playerName) updateData.playerName = data.playerName;
+    if (data.slots) updateData.slotsData = JSON.stringify(data.slots);
+    
+    const updated = await prisma.timeslotSubmission.update({
+      where: { id: submissionId },
+      data: updateData,
+    });
+    
+    return {
+      ...updated,
+      slots: JSON.parse(updated.slotsData),
+    };
+  }
+
   // 刪除提交
   static async deleteSubmission(submissionId: string) {
     return await prisma.timeslotSubmission.delete({

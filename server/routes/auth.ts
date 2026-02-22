@@ -130,6 +130,30 @@ router.put('/profile', authMiddleware, async (req: AuthRequest, res) => {
   }
 });
 
+// 會員自行變更密碼
+router.put('/change-password', authMiddleware, async (req: AuthRequest, res) => {
+  try {
+    const { oldPassword, newPassword } = req.body;
+
+    if (!oldPassword || !newPassword) {
+      return res.status(400).json({ error: 'Old password and new password are required' });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({ error: 'New password must be at least 6 characters' });
+    }
+
+    await UserService.changePassword(req.user!.gameId, oldPassword, newPassword);
+
+    res.json({ message: 'Password changed successfully' });
+  } catch (error: any) {
+    if (error.message === 'Current password is incorrect') {
+      return res.status(400).json({ error: error.message });
+    }
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // ======== 管理員 API ========
 
 // 取得所有管理員
@@ -169,10 +193,10 @@ router.post('/admins/:userId', authMiddleware, adminMiddleware, async (req: Auth
 router.put('/users/:userId/admin', authMiddleware, adminMiddleware, async (req: AuthRequest, res) => {
   try {
     const { userId } = req.params;
-    const { isAdmin } = req.body;
+    const { isAdmin, managedAlliances, canAssignOfficers, canManageEvents } = req.body;
 
     const userIdStr = Array.isArray(userId) ? userId[0] : userId;
-    const updated = await UserService.setAdminByGameId(userIdStr, isAdmin);
+    const updated = await UserService.setAdminByGameId(userIdStr, isAdmin, managedAlliances, canAssignOfficers, canManageEvents);
 
     res.json({
       message: isAdmin ? 'User promoted to admin' : 'Admin role removed',
@@ -181,6 +205,34 @@ router.put('/users/:userId/admin', authMiddleware, adminMiddleware, async (req: 
         gameId: updated.gameId,
         allianceName: updated.allianceName,
         isAdmin: updated.isAdmin,
+        managedAlliances: UserService.getManagedAlliances(updated),
+        canAssignOfficers: updated.canAssignOfficers,
+        canManageEvents: updated.canManageEvents,
+      },
+    });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// 重設使用者密碼 (僅管理員)
+router.put('/users/:gameId/reset-password', authMiddleware, adminMiddleware, async (req: AuthRequest, res) => {
+  try {
+    const { gameId } = req.params;
+    const { newPassword } = req.body;
+
+    if (!newPassword || newPassword.length < 6) {
+      return res.status(400).json({ error: 'Password must be at least 6 characters' });
+    }
+
+    const gameIdStr = Array.isArray(gameId) ? gameId[0] : gameId;
+    const updated = await UserService.resetPassword(gameIdStr, newPassword);
+
+    res.json({
+      message: 'Password reset successfully',
+      user: {
+        id: updated.id,
+        gameId: updated.gameId,
       },
     });
   } catch (error: any) {
@@ -191,9 +243,12 @@ router.put('/users/:userId/admin', authMiddleware, adminMiddleware, async (req: 
 // 取得所有使用者 (僅管理員)
 router.get('/users', authMiddleware, adminMiddleware, async (req: AuthRequest, res) => {
   try {
+    console.log('[GET /users] Fetching all users...');
     const users = await UserService.getAllUsers();
+    console.log('[GET /users] Found', users.length, 'users');
     res.json({ users });
   } catch (error: any) {
+    console.error('[GET /users] Error:', error.message);
     res.status(500).json({ error: error.message });
   }
 });

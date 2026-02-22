@@ -19,6 +19,7 @@ import submissionRoutes from './routes/submissions';
 import statisticsRoutes from './routes/statistics';
 import officerRoutes from './routes/officers';
 import eventRoutes from './routes/events';
+import mapRoutes from './routes/maps';
 
 // 加载环境变量
 dotenv.config({ path: '.env.production' });
@@ -26,13 +27,27 @@ dotenv.config(); // 作为备份
 
 const app: Express = express();
 const prisma = new PrismaClient();
-const PORT = process.env.PORT || process.env.SERVER_PORT || 3001;
+const PORT = parseInt(process.env.PORT || process.env.SERVER_PORT || '3001', 10);
 const HOST = process.env.HOST || 'localhost';
 
 // Middleware
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+    origin: (origin, callback) => {
+      const allowedOrigins = [
+        'http://localhost:5173',
+        'http://localhost:3000',
+        'https://wos-2438.site',
+        'https://www.wos-2438.site',
+        process.env.FRONTEND_URL,
+      ].filter(Boolean);
+      
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(null, true); // Allow all for now
+      }
+    },
     credentials: true,
   })
 );
@@ -50,6 +65,7 @@ app.use('/api/submissions', submissionRoutes);
 app.use('/api/statistics', statisticsRoutes);
 app.use('/api/officers', officerRoutes);
 app.use('/api/events', eventRoutes);
+app.use('/api/maps', mapRoutes);
 
 // 错误处理
 app.use((err: any, req: Request, res: Response, next: Function) => {
@@ -60,7 +76,7 @@ app.use((err: any, req: Request, res: Response, next: Function) => {
 });
 
 // 启动服务器
-const server = app.listen(PORT, HOST as string, () => {
+const server = app.listen(PORT, HOST, () => {
   console.log(`✓ Backend server running on http://${HOST}:${PORT}`);
   console.log(`✓ Frontend URL: ${process.env.FRONTEND_URL}`);
   console.log(`✓ Environment: ${process.env.NODE_ENV || 'development'}`);

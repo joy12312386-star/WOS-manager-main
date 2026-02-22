@@ -16,6 +16,7 @@ const ALLIANCE_OPTIONS = ['TWD', 'NTD', 'QUO', 'TTU', 'ONE', 'DEU'];
 const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
   const navigate = useNavigate();
   const { addToast } = useToast();
+  const { t } = useI18n();
   
   const [fid, setFid] = useState('');
   const [password, setPassword] = useState('');
@@ -34,7 +35,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
     e.preventDefault();
     
     if (!fid.trim()) {
-      setError('請輸入遊戲ID');
+      setError(t('enterGameId_error'));
       return;
     }
 
@@ -58,7 +59,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
         setStep('register');
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : '無法獲取玩家資訊，請檢查遊戲ID是否正確');
+      setError(err instanceof Error ? err.message : t('fetchPlayerDataFailed'));
       setPlayerData(null);
     } finally {
       setLoading(false);
@@ -69,7 +70,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
     e.preventDefault();
     
     if (!password.trim()) {
-      setError('請輸入密碼');
+      setError(t('enterPassword_error'));
       return;
     }
 
@@ -79,9 +80,11 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
     try {
       const user = await AuthService.login(fid, password);
       if (!user) {
-        setError('登入失敗：密碼錯誤或用戶不存在');
+        setError(t('loginFailed_auth'));
         return;
       }
+      
+      console.log('✅ 登入返回的用戶數據:', user);
       
       // 登入成功後，更新玩家資料到資料庫
       if (playerData) {
@@ -93,11 +96,11 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
         });
       }
       
-      addToast(`歡迎回來, ${playerData?.nickname}!`, 'success');
+      addToast(`${t('welcomeMessage')}, ${playerData?.nickname}!`, 'success');
       onLoginSuccess(user, playerData!);
-      navigate('/form');
+      navigate('/register');
     } catch (err) {
-      setError(err instanceof Error ? err.message : '登入失敗');
+      setError(err instanceof Error ? err.message : t('loginFailed_general'));
     } finally {
       setLoading(false);
     }
@@ -107,17 +110,17 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
     e.preventDefault();
     
     if (!password.trim()) {
-      setError('請輸入密碼');
+      setError(t('enterPassword_error'));
       return;
     }
 
     if (password !== confirmPassword) {
-      setError('密碼不符，請重新輸入');
+      setError(t('passwordMismatch'));
       return;
     }
 
     if (password.length < 6) {
-      setError('密碼至少需要 6 個字符');
+      setError(t('passwordTooShort'));
       return;
     }
 
@@ -129,7 +132,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
     e.preventDefault();
 
     if (!selectedAlliance) {
-      setError('請選擇或輸入聯盟');
+      setError(t('selectAllianceRequired'));
       return;
     }
 
@@ -146,7 +149,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
           setAllianceList([...allianceList, allianceToUse]);
         }
       } else if (selectedAlliance === 'custom') {
-        setError('請輸入自訂聯盟名稱');
+        setError(t('customAllianceRequired'));
         return;
       }
 
@@ -157,14 +160,14 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
         avatarImage: playerData?.avatar_image,
       });
       if (!user) {
-        setError('註冊失敗，請稍後重試');
+        setError(t('registrationFailed_db'));
         return;
       }
-      addToast(`註冊成功，歡迎 ${playerData?.nickname}!`, 'success');
+      addToast(`${t('registerSuccess')}, ${t('welcomeMessage')} ${playerData?.nickname}!`, 'success');
       onLoginSuccess(user, playerData!);
-      navigate('/form');
+      navigate('/register');
     } catch (err) {
-      setError(err instanceof Error ? err.message : '註冊失敗');
+      setError(err instanceof Error ? err.message : t('registerSuccess'));
     } finally {
       setLoading(false);
     }
@@ -175,11 +178,11 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
     const trimmed = name.trim().toUpperCase();
     // 檢查長度
     if (trimmed.length !== 3) {
-      return '聯盟名稱必須是 3 個字符';
+      return t('allianceNameMust3Chars');
     }
     // 檢查只能是英文大小寫和數字
     if (!/^[A-Z0-9]{3}$/.test(trimmed)) {
-      return '只能輸入大小寫英文和數字';
+      return t('onlyEnglishNumbers');
     }
     return '';
   };
@@ -193,18 +196,6 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
 
   return (
     <div className="min-h-screen w-full flex items-center justify-center p-4 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 relative">
-      {/* Clear Data Button (Dev) */}
-      <button
-        onClick={() => {
-          AuthService.clearAllData();
-          addToast('✓ 所有本地數據已清除', 'success');
-          window.location.reload();
-        }}
-        className="absolute top-4 left-4 px-3 py-1 bg-red-600/20 hover:bg-red-600/40 text-red-300 text-xs rounded transition border border-red-600/30"
-      >
-        🧹 清除數據
-      </button>
-
       <div className="w-full max-w-md">
         {/* Header */}
         <div className="text-center mb-12">
@@ -212,7 +203,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
             <span className="text-4xl">🏆</span>
           </div>
           <h1 className="text-4xl font-bold text-white mb-3">WOS Manager</h1>
-          <p className="text-slate-400 text-lg">聯盟成員登記系統</p>
+          <p className="text-slate-400 text-lg">{t('systemDescription')}</p>
         </div>
 
         {/* Main Card */}
@@ -220,19 +211,19 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
           {/* Step 1: Input FID */}
           {step === 'input' && (
             <form onSubmit={handleFidSubmit} className="p-8 md:p-10">
-              <h2 className="text-2xl font-bold text-white mb-2">開始登記</h2>
-              <p className="text-slate-400 mb-8 text-sm">輸入您的遊戲ID進行驗證</p>
+              <h2 className="text-2xl font-bold text-white mb-2">{t('startRegistration')}</h2>
+              <p className="text-slate-400 mb-8 text-sm">{t('enterGameIdSubtitle')}</p>
               
               <div className="space-y-6">
                 <div>
                   <label className="block text-sm font-semibold text-slate-200 mb-3">
-                    遊戲ID <span className="text-amber-400">*</span>
+                    {t('gameIdLabel')} <span className="text-amber-400">*</span>
                   </label>
                   <input
                     type="text"
                     value={fid}
                     onChange={(e) => setFid(e.target.value)}
-                    placeholder="輸入您的遊戲ID"
+                    placeholder={t('enterGameId')}
                     className="w-full px-4 py-3 bg-slate-700/60 border border-slate-600 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/30 transition"
                     disabled={loading}
                     autoFocus
@@ -254,11 +245,11 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                   {loading ? (
                     <>
                       <Loader size={18} className="animate-spin" />
-                      驗證中...
+                      {t('verifying')}
                     </>
                   ) : (
                     <>
-                      <span>驗證並繼續</span>
+                      <span>{t('verifyAndContinue')}</span>
                       <span>→</span>
                     </>
                   )}
@@ -270,7 +261,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
           {/* Step 2: Login (existing user) */}
           {step === 'verify' && playerData && (
             <form onSubmit={handleLogin} className="p-8 md:p-10">
-              <h2 className="text-2xl font-bold text-white mb-2">歡迎回來</h2>
+              <h2 className="text-2xl font-bold text-white mb-2">{t('welcomeBack')}</h2>
               <p className="text-slate-400 mb-8 text-sm">{playerData?.nickname}</p>
               
               <div className="mb-8 p-4 bg-gradient-to-br from-slate-700/50 to-slate-800/50 rounded-lg border border-slate-600/50">
@@ -288,13 +279,13 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
               <div className="space-y-6">
                 <div>
                   <label className="block text-sm font-semibold text-slate-200 mb-3">
-                    密碼 <span className="text-amber-400">*</span>
+                    {t('passwordLabel')} <span className="text-amber-400">*</span>
                   </label>
                   <input
                     type="password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    placeholder="輸入密碼"
+                    placeholder={t('enterPassword')}
                     className="w-full px-4 py-3 bg-slate-700/60 border border-slate-600 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/30 transition"
                     disabled={loading}
                     autoFocus
@@ -308,33 +299,34 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                   </div>
                 )}
 
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full py-3 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-900 font-bold rounded-lg transition shadow-lg shadow-amber-500/20 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 active:scale-95"
-                >
-                  {loading ? (
-                    <>
-                      <Loader size={18} className="animate-spin" />
-                      驗證中...
-                    </>
-                  ) : (
-                    '登入'
-                  )}
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    setStep('input');
-                    setFid('');
-                    setPassword('');
-                    setError('');
-                  }}
-                  className="w-full py-2 text-slate-400 hover:text-slate-300 font-semibold transition"
-                >
-                  返回
-                </button>
+                <div className="flex gap-3">
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="flex-1 py-3 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-900 font-bold rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  >
+                    {loading ? (
+                      <>
+                        <Loader size={18} className="animate-spin" />
+                        {t('loggingIn')}
+                      </>
+                    ) : (
+                      t('confirmLogin')
+                    )}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setStep('input');
+                      setFid('');
+                      setPassword('');
+                      setError('');
+                    }}
+                    className="flex-1 py-3 bg-slate-700 hover:bg-slate-600 text-white font-semibold rounded-lg transition"
+                  >
+                    {t('back')}
+                  </button>
+                </div>
               </div>
             </form>
           )}
@@ -342,19 +334,19 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
           {/* Step 3: Register (new user) */}
           {step === 'register' && playerData && (
             <form onSubmit={handleRegister} className="p-8 md:p-10">
-              <h2 className="text-2xl font-bold text-white mb-2">建立帳戶</h2>
+              <h2 className="text-2xl font-bold text-white mb-2">{t('createAccount')}</h2>
               <p className="text-slate-400 mb-8 text-sm">{playerData?.nickname}</p>
 
               <div className="space-y-6">
                 <div>
                   <label className="block text-sm font-semibold text-slate-200 mb-3">
-                    密碼 <span className="text-amber-400">*</span>
+                    {t('passwordLabel')} <span className="text-amber-400">*</span>
                   </label>
                   <input
                     type="password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    placeholder="至少 6 個字符"
+                    placeholder={t('atLeast6Characters')}
                     className="w-full px-4 py-3 bg-slate-700/60 border border-slate-600 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/30 transition"
                     disabled={loading}
                     autoFocus
@@ -363,13 +355,13 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
 
                 <div>
                   <label className="block text-sm font-semibold text-slate-200 mb-3">
-                    確認密碼 <span className="text-amber-400">*</span>
+                    {t('confirmPasswordLabel')} <span className="text-amber-400">*</span>
                   </label>
                   <input
                     type="password"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
-                    placeholder="再次輸入密碼"
+                    placeholder={t('reEnterPassword')}
                     className="w-full px-4 py-3 bg-slate-700/60 border border-slate-600 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/30 transition"
                     disabled={loading}
                   />
@@ -390,10 +382,10 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                   {loading ? (
                     <>
                       <Loader size={18} className="animate-spin" />
-                      建立中...
+                      {t('creating')}
                     </>
                   ) : (
-                    '下一步'
+                    t('next')
                   )}
                 </button>
 
@@ -408,7 +400,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                   }}
                   className="w-full py-2 text-slate-400 hover:text-slate-300 font-semibold transition"
                 >
-                  返回
+                  {t('back')}
                 </button>
               </div>
             </form>
@@ -417,13 +409,13 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
           {/* Step 4: Select Alliance */}
           {step === 'selectAlliance' && (
             <form onSubmit={handleSelectAlliance} className="p-8 md:p-10">
-              <h2 className="text-2xl font-bold text-white mb-2">選擇聯盟</h2>
-              <p className="text-slate-400 mb-8 text-sm">請選擇或輸入您的聯盟</p>
+              <h2 className="text-2xl font-bold text-white mb-2">{t('selectAllianceTitle')}</h2>
+              <p className="text-slate-400 mb-8 text-sm">{t('selectOrEnterAlliance')}</p>
 
               <div className="space-y-6">
                 <div>
                   <label className="block text-sm font-semibold text-slate-200 mb-3">
-                    聯盟 <span className="text-amber-400">*</span>
+                    {t('allianceLabel')} <span className="text-amber-400">*</span>
                   </label>
                   <select
                     value={selectedAlliance}
@@ -436,13 +428,13 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                     disabled={loading}
                     autoFocus
                   >
-                    <option value="">-- 請選擇 --</option>
+                    <option value="">{t('pleaseSelect')}</option>
                     {allianceList.map((alliance) => (
                       <option key={alliance} value={alliance}>
                         {alliance}
                       </option>
                     ))}
-                    <option value="custom">--- 其他（自訂） ---</option>
+                    <option value="custom">{t('custom')}</option>
                   </select>
                 </div>
 
@@ -450,7 +442,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                 {showCustomInput && (
                   <div>
                     <label className="block text-sm font-semibold text-slate-200 mb-3">
-                      自訂聯盟名稱 <span className="text-amber-400">*</span>
+                      {t('customAllianceName')} <span className="text-amber-400">*</span>
                     </label>
                     <input
                       type="text"
@@ -468,13 +460,13 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                           }
                         }
                       }}
-                      placeholder="輸入 3 個字符（英文/數字，如 ABC 或 A1B）"
+                      placeholder={t('enter3Characters')}
                       maxLength={3}
                       className="w-full px-4 py-3 bg-slate-700/60 border border-slate-600 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/30 transition uppercase"
                       disabled={loading}
                     />
                     <p className="text-slate-400 text-xs mt-2">
-                      僅限大小寫英文和數字，共 3 個字符
+                      {t('onlyAlphanumeric')}
                     </p>
                   </div>
                 )}
@@ -494,10 +486,10 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                   {loading ? (
                     <>
                       <Loader size={18} className="animate-spin" />
-                      完成中...
+                      {t('completing')}
                     </>
                   ) : (
-                    '完成註冊'
+                    t('completeRegistration')
                   )}
                 </button>
 
@@ -512,7 +504,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                   }}
                   className="w-full py-2 text-slate-400 hover:text-slate-300 font-semibold transition"
                 >
-                  返回
+                  {t('back')}
                 </button>
               </div>
             </form>
@@ -521,7 +513,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
 
         {/* Footer */}
         <p className="text-center text-slate-500 text-xs mt-8">
-          🔒 數據存儲在您的瀏覽器本地，安全且隱私
+          {t('dataStoragePrivacyFooter')}
         </p>
       </div>
 

@@ -17,6 +17,41 @@ if (in_array($script_name, ['diagnostic.php', 'test-php.php']) && file_exists(__
     exit;
 }
 
+// ===== 首先处理静态文件 (assets, fonts, images 等) =====
+$static_exts = ['js', 'css', 'svg', 'png', 'jpg', 'jpeg', 'gif', 'ico', 'woff', 'woff2', 'ttf', 'eot', 'map', 'json'];
+$file_ext = strtolower(pathinfo($path, PATHINFO_EXTENSION));
+
+if (in_array($file_ext, $static_exts)) {
+    // 尝试从 dist 目录服务文件
+    $file_path = __DIR__ . '/dist' . $path;
+    $real_path = realpath($file_path);
+    $dist_path = realpath(__DIR__ . '/dist');
+    
+    if ($real_path && $dist_path && strpos($real_path, $dist_path) === 0 && file_exists($real_path)) {
+        $mime_types = [
+            'js' => 'application/javascript; charset=utf-8',
+            'css' => 'text/css; charset=utf-8',
+            'svg' => 'image/svg+xml',
+            'png' => 'image/png',
+            'jpg' => 'image/jpeg',
+            'jpeg' => 'image/jpeg',
+            'gif' => 'image/gif',
+            'ico' => 'image/x-icon',
+            'woff' => 'font/woff',
+            'woff2' => 'font/woff2',
+            'ttf' => 'font/ttf',
+            'eot' => 'application/vnd.ms-fontobject',
+            'map' => 'application/json',
+            'json' => 'application/json'
+        ];
+        
+        header('Content-Type: ' . ($mime_types[$file_ext] ?? 'application/octet-stream'));
+        header('Cache-Control: public, max-age=31536000, immutable');
+        readfile($real_path);
+        exit;
+    }
+}
+
 // ===== 处理 Game API 请求 (代理到遊戲服務器) =====
 if (strpos($path, '/game-api/') === 0) {
     $method = $_SERVER['REQUEST_METHOD'];
@@ -146,41 +181,7 @@ if (strpos($path, '/api/') === 0) {
     exit;
 }
 
-// ===== 处理静态文件 =====
-$path = ltrim($path, '/');
-$file_ext = pathinfo($path, PATHINFO_EXTENSION);
-$static_exts = ['js', 'css', 'svg', 'png', 'jpg', 'jpeg', 'gif', 'ico', 'woff', 'woff2', 'ttf', 'eot', 'map'];
-
-if (in_array($file_ext, $static_exts)) {
-    $file_path = __DIR__ . '/dist/' . $path;
-    $real_path = realpath($file_path);
-    $dist_path = realpath(__DIR__ . '/dist');
-    
-    if ($real_path && strpos($real_path, $dist_path) === 0 && file_exists($real_path)) {
-        $mime_types = [
-            'js' => 'application/javascript',
-            'css' => 'text/css',
-            'svg' => 'image/svg+xml',
-            'png' => 'image/png',
-            'jpg' => 'image/jpeg',
-            'jpeg' => 'image/jpeg',
-            'gif' => 'image/gif',
-            'ico' => 'image/x-icon',
-            'woff' => 'font/woff',
-            'woff2' => 'font/woff2',
-            'ttf' => 'font/ttf',
-            'eot' => 'application/vnd.ms-fontobject',
-            'map' => 'application/json'
-        ];
-        
-        header('Content-Type: ' . ($mime_types[$file_ext] ?? 'application/octet-stream'));
-        header('Cache-Control: public, max-age=31536000');
-        readfile($real_path);
-        exit;
-    }
-}
-
-// ===== SPA 回退 =====
+// ===== 處理 SPA 回退 =====
 $index_path = __DIR__ . '/dist/index.html';
 if (file_exists($index_path)) {
     header('Content-Type: text/html; charset=utf-8');

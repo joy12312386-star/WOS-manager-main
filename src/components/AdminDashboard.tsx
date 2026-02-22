@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Users, FileText, LogOut, Search, Download, Trash2, Edit, Eye, Filter, ChevronDown, Calendar, Plus, Settings, ArrowLeft, UserPlus, X } from 'lucide-react';
-import { AuthService, FormService, DebugService, OfficerConfigService, EventService, Event, ActivityType } from '../services/auth';
+import { Users, FileText, LogOut, Search, Download, Trash2, Edit, Eye, Filter, ChevronDown, Calendar, Plus, Settings, ArrowLeft, UserPlus, X, Map } from 'lucide-react';
+import { AuthService, FormService, DebugService, OfficerConfigService, EventService, Event, ActivityType, MapService, AllianceMapItem, AllianceMapDetail } from '../services/auth';
 import { User, FormSubmission, ACTIVITY_TYPES, DEFAULT_DAY_CONFIG } from '../../types';
 import { useToast } from './ui/Toast';
+import { useI18n } from '../i18n/I18nProvider';
 import { fetchPlayer } from '../services/api';
+import { AllianceMapEditor } from './AllianceMapEditor';
 
 // 將 stoveLv 轉換成火晶等級 (1-10) 用於顯示圖片
 const getFireCrystalLevel = (stoveLv: number): number | null => {
@@ -47,6 +49,72 @@ const formatTimeWithTimezones = (dateString: string, compact: boolean = false) =
   return { utcTime, twTime };
 };
 
+// 生成時間選項 (UTC 00:00 - 翌日 00:00)
+const generateTimeOptions = (t: (key: string) => string) => {
+  const options = [];
+  for (let i = 0; i <= 24; i++) {
+    const isNextDay = i === 24;
+    const utcHour = isNextDay ? 0 : i;
+    const utcHourStr = String(utcHour).padStart(2, '0');
+    const taiwanHour = (i + 8) % 24;
+    const taiwanHourStr = String(taiwanHour).padStart(2, '0');
+    const day = i >= 24 || i + 8 >= 24 ? t('nextDay') : '';
+    options.push({
+      value: i,
+      label: `UTC ${utcHourStr}:00 (台灣 ${taiwanHourStr}:00) ${day}`
+    });
+  }
+  return options;
+};
+
+// 正規化時間字串 - 處理異常的時間值（如 "47:00" 轉為 "23:30" 等）
+// 舊資料可能使用了 48 個半小時時段的索引值 (0-47)，需要轉換為正確格式
+const normalizeTimeString = (timeStr: string): string => {
+  if (!timeStr) return timeStr;
+  const parts = timeStr.split(':');
+  if (parts.length !== 2) return timeStr;
+  
+  const hour = parseInt(parts[0], 10);
+  const minute = parseInt(parts[1], 10);
+  
+  // 如果小時數在正常範圍 (0-24)，直接返回
+  if (hour <= 24) {
+    return timeStr;
+  }
+  
+  // 舊系統使用 48 個半小時時段 (0-47)，需要轉換
+  // 時段索引 * 30 分鐘 = 總分鐘數
+  const totalMinutes = hour * 30; // hour 在這裡實際上是 slot index
+  const normalizedHour = Math.floor(totalMinutes / 60) % 24;
+  const normalizedMinute = totalMinutes % 60;
+  
+  return `${String(normalizedHour).padStart(2, '0')}:${String(normalizedMinute).padStart(2, '0')}`;
+};
+
+// 格式化時間範圍，同時顯示 UTC 和台灣時間
+// 格式: UTC XX:XX~XX:XX（台灣時間 XX:XX～XX:XX）
+const formatTimeRangeWithTaiwan = (startStr: string, endStr: string): string => {
+  const startNormalized = normalizeTimeString(startStr);
+  const endNormalized = normalizeTimeString(endStr);
+  if (!startNormalized || !endNormalized) return `${startNormalized || '-'}~${endNormalized || '-'}`;
+  
+  const startParts = startNormalized.split(':');
+  const endParts = endNormalized.split(':');
+  if (startParts.length !== 2 || endParts.length !== 2) return `${startNormalized}~${endNormalized}`;
+  
+  const startUtcHour = parseInt(startParts[0], 10);
+  const endUtcHour = parseInt(endParts[0], 10);
+  
+  // 台灣時間 = UTC + 8
+  const startTaiwanHour = (startUtcHour + 8) % 24;
+  const endTaiwanHour = (endUtcHour + 8) % 24;
+  
+  const startTaiwanStr = `${String(startTaiwanHour).padStart(2, '0')}:${startParts[1]}`;
+  const endTaiwanStr = `${String(endTaiwanHour).padStart(2, '0')}:${endParts[1]}`;
+  
+  return `UTC ${startNormalized}~${endNormalized}（台灣時間 ${startTaiwanStr}～${endTaiwanStr}）`;
+};
+
 interface AdminDashboardProps {
   onLogout: () => void;
   currentUser?: User;
@@ -58,7 +126,8 @@ const SUPER_ADMIN_ID = '380768429';
 
 export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser, onBackToPlayer }) => {
   const { addToast } = useToast();
-  const [activeTab, setActiveTab] = useState<'users' | 'submissions' | 'officers' | 'events'>('users');
+  const { t } = useI18n();
+  const [activeTab, setActiveTab] = useState<'users' | 'submissions' | 'officers' | 'events' | 'map'>('users');
   const [submissionType, setSubmissionType] = useState<'research' | 'training' | 'building'>('research');
   const [officerType, setOfficerType] = useState<'research' | 'training' | 'building'>('research');
   const [users, setUsers] = useState<User[]>([]);
@@ -75,6 +144,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, curren
   // 場次日期相關
   const [eventDate, setEventDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [eventDates, setEventDates] = useState<string[]>([]);
+  // 地圖數據
+  const [mapData, setMapData] = useState<any>(null);
+  const [mapList, setMapList] = useState<AllianceMapItem[]>([]);
+  const [editingMapId, setEditingMapId] = useState<string | null>(null);
+  const [showMapEditor, setShowMapEditor] = useState(false);
+  const [newMapTitle, setNewMapTitle] = useState('');
   const [isLoadingOfficers, setIsLoadingOfficers] = useState(false);
   // 官職管理篩選和排序
   const [officerFilter, setOfficerFilter] = useState<'all' | 'assigned' | 'unassigned'>('all');
@@ -115,6 +190,67 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, curren
   const [showDeleteUserModal, setShowDeleteUserModal] = useState(false);
   const [userToDelete, setUserToDelete] = useState<User | null>(null);
   const [deletingUser, setDeletingUser] = useState(false);
+  // 重設密碼
+  const [showResetPasswordModal, setShowResetPasswordModal] = useState(false);
+  const [userToResetPassword, setUserToResetPassword] = useState<User | null>(null);
+  const [newPassword, setNewPassword] = useState('');
+  const [resettingPassword, setResettingPassword] = useState(false);
+  // 管理員聯盟權限設定
+  const [showAdminSettingsModal, setShowAdminSettingsModal] = useState(false);
+  const [userToSetAdmin, setUserToSetAdmin] = useState<User | null>(null);
+  const [selectedManagedAlliances, setSelectedManagedAlliances] = useState<string[]>([]);
+  const [manageAllAlliances, setManageAllAlliances] = useState(true);
+  const [canAssignOfficers, setCanAssignOfficers] = useState(true);
+  const [canManageEvents, setCanManageEvents] = useState(true);
+  // 編輯報名資料
+  const [showEditSubmissionModal, setShowEditSubmissionModal] = useState(false);
+  const [submissionToEdit, setSubmissionToEdit] = useState<FormSubmission | null>(null);
+  const [editPlayerName, setEditPlayerName] = useState('');
+  const [editAlliance, setEditAlliance] = useState('');
+  const [editSlots, setEditSlots] = useState<any>(null);
+  const [editingSubmission, setEditingSubmission] = useState(false);
+  
+  // 可選的聯盟列表
+  const ALLIANCE_OPTIONS = ['TWD', 'NTD', 'QUO', 'TTU', 'ONE', 'DEU'];
+  
+  // 時間選項
+  const timeOptions = generateTimeOptions(t);
+  
+  // 編輯時段相關函數
+  const handleEditTimeSlotChange = (day: string, index: number, field: 'start' | 'end', value: number) => {
+    const timeStr = String(value).padStart(2, '0') + ':00';
+    setEditSlots((prev: any) => {
+      if (!prev) return prev;
+      const slot = { ...prev[day] };
+      if (!slot.timeSlots) slot.timeSlots = [{ start: '', end: '' }];
+      slot.timeSlots = [...slot.timeSlots];
+      slot.timeSlots[index] = { ...slot.timeSlots[index], [field]: timeStr };
+      return { ...prev, [day]: slot };
+    });
+  };
+
+  const addEditTimeSlot = (day: string) => {
+    setEditSlots((prev: any) => {
+      if (!prev) return prev;
+      const slot = { ...prev[day] };
+      if (!slot.timeSlots) slot.timeSlots = [];
+      slot.timeSlots = [...slot.timeSlots, { start: '', end: '' }];
+      return { ...prev, [day]: slot };
+    });
+  };
+
+  const removeEditTimeSlot = (day: string, index: number) => {
+    setEditSlots((prev: any) => {
+      if (!prev) return prev;
+      const slot = { ...prev[day] };
+      if (!slot.timeSlots) return prev;
+      slot.timeSlots = slot.timeSlots.filter((_: any, i: number) => i !== index);
+      if (slot.timeSlots.length === 0) {
+        slot.timeSlots = [{ start: '', end: '' }];
+      }
+      return { ...prev, [day]: slot };
+    });
+  };
   
   // 載入場次列表
   const loadEvents = async () => {
@@ -161,7 +297,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, curren
       }
       loadEventDates(); // 重新載入日期列表
     } else {
-      addToast('保存失敗，請重試', 'error');
+      addToast(t('saveFailed'), 'error');
     }
   };
 
@@ -174,17 +310,45 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, curren
       const success = await AuthService.deleteUser(userToDelete.gameId);
       if (success) {
         setUsers(users => users.filter(u => u.gameId !== userToDelete.gameId));
-        addToast(`已刪除用戶 ${userToDelete.nickname || userToDelete.gameId}`, 'success');
+        addToast(`${t('userDeleted')} ${userToDelete.nickname || userToDelete.gameId}`, 'success');
         setShowDeleteUserModal(false);
         setUserToDelete(null);
       } else {
-        addToast('刪除失敗，請重試', 'error');
+        addToast(t('deleteFailed'), 'error');
       }
     } catch (error) {
       console.error('Error deleting user:', error);
-      addToast('刪除失敗，請重試', 'error');
+      addToast(t('deleteFailed'), 'error');
     } finally {
       setDeletingUser(false);
+    }
+  };
+
+  // 重設密碼
+  const handleResetPassword = async () => {
+    if (!userToResetPassword) return;
+    
+    if (newPassword.length < 6) {
+      addToast(t('passwordMinLength'), 'error');
+      return;
+    }
+    
+    setResettingPassword(true);
+    try {
+      const success = await AuthService.resetPassword(userToResetPassword.gameId, newPassword);
+      if (success) {
+        addToast(`${t('passwordResetSuccess')} - ${userToResetPassword.nickname || userToResetPassword.gameId}`, 'success');
+        setShowResetPasswordModal(false);
+        setUserToResetPassword(null);
+        setNewPassword('');
+      } else {
+        addToast(t('passwordResetFailed'), 'error');
+      }
+    } catch (error) {
+      console.error('Error resetting password:', error);
+      addToast(t('passwordResetFailed'), 'error');
+    } finally {
+      setResettingPassword(false);
     }
   };
 
@@ -195,10 +359,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, curren
     newOfficers[key] = [];
     setOfficers(newOfficers);
     saveOfficers(newOfficers, false);
-    addToast('已清除所有排定', 'success');
+    addToast(t('clearAllAssignments'), 'success');
   };
 
-  // 切換官職類型並自動分配未分配的玩家
+  // 切換官職類型（不再自動分配）
   const handleSwitchOfficerType = (newType: 'research' | 'training' | 'building') => {
     if (newType === officerType) return; // 如果是同一類型，不做任何事
     
@@ -206,11 +370,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, curren
     setHighlightedSlotIndex(null);
     setSelectedPlayer(null);
     setOfficerType(newType);
-    
-    // 自動分配該類型的剩餘玩家
-    setTimeout(() => {
-      handleAutoAssignUnassigned(newType);
-    }, 0);
+    // 不再自動分配，讓管理員手動操作
   };
 
   // 自動分配指定類型的未分配玩家
@@ -219,16 +379,20 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, curren
     const slotKey = getSlotKeyByType(targetType);
     const key = `${targetType}_slots`;
     
-    // 取得已分配的玩家ID
+    // 取得所有官職類型中已分配的玩家ID
     const assignedPlayerIds = new Set<string>();
     const newOfficers = { ...officers };
     if (!newOfficers[key]) newOfficers[key] = [];
     
-    // 收集該類型已分配的玩家ID
-    for (const slot of newOfficers[key]) {
-      if (slot?.players) {
-        for (const player of slot.players) {
-          assignedPlayerIds.add(player.id);
+    // 收集所有類型已分配的玩家ID（防止同一人出現在不同官職類型）
+    const types = ['research', 'training', 'building'] as const;
+    for (const type of types) {
+      const typeKey = `${type}_slots`;
+      for (const slot of (newOfficers[typeKey] || [])) {
+        if (slot?.players) {
+          for (const player of slot.players) {
+            assignedPlayerIds.add(player.id);
+          }
         }
       }
     }
@@ -316,7 +480,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, curren
     if (assignedCount > 0) {
       setOfficers(newOfficers);
       saveOfficers(newOfficers, false);
-      addToast(`已自動分配 ${assignedCount} 位 ${['研究', '訓練', '建築'][['research', 'training', 'building'].indexOf(targetType)]} 玩家`, 'success');
+      addToast(`已自動分配 ${assignedCount} 位 ${[t('research'), t('training'), t('building')][['research', 'training', 'building'].indexOf(targetType)]} 玩家`, 'success');
     }
   };
 
@@ -331,13 +495,17 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, curren
       newOfficers[key] = [];
     }
     
-    // 取得已分配的玩家ID
+    // 取得所有官職類型中已分配的玩家ID（防止同一人出現在不同官職類型）
     const assignedPlayerIds = new Set<string>();
-    for (const slot of newOfficers[key]) {
-      if (slot?.players) {
-        for (const player of slot.players) {
-          assignedPlayerIds.add(player.id);
-          if (player.gameId) assignedPlayerIds.add(player.gameId); // 也用 gameId 追蹤
+    const types = ['research', 'training', 'building'] as const;
+    for (const type of types) {
+      const typeKey = `${type}_slots`;
+      for (const slot of (newOfficers[typeKey] || [])) {
+        if (slot?.players) {
+          for (const player of slot.players) {
+            assignedPlayerIds.add(player.id);
+            if (player.gameId) assignedPlayerIds.add(player.gameId); // 也用 gameId 追蹤
+          }
         }
       }
     }
@@ -440,11 +608,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, curren
     saveOfficers(newOfficers, false);
     
     if (assignedCount > 0) {
-      addToast(`已自動分配 ${assignedCount} 位玩家（依${sortBy === 'accel' ? '加速' : '火晶微粒'}排序）`, 'success');
+      addToast(`已自動分配 ${assignedCount} 位玩家（依${sortBy === 'accel' ? t('researchAccel') : '火晶微粒'}排序）`, 'success');
     } else if (eligiblePlayers.length === 0) {
-      addToast('所有符合條件的玩家都已分配', 'info');
+      addToast(t('allPlayersAssigned'), 'info');
     } else {
-      addToast('沒有符合志願時段的空位', 'info');
+      addToast(t('noEmptySlotsForPreference'), 'info');
     }
   };
 
@@ -487,15 +655,19 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, curren
     }
   };
 
-  // 檢查玩家是否已在任何時段中
-  const isPlayerInAnySlot = (playerId: string, gameId?: string): { inSlot: boolean; slotIndex?: number } => {
-    const key = `${officerType}_slots`;
-    const slots = officers[key] || [];
-    for (let i = 0; i < slots.length; i++) {
-      const slot = slots[i];
-      // 同時檢查 id 和 gameId，以支持特殊新增的玩家
-      if (slot?.players?.find((p: any) => p.id === playerId || (gameId && p.gameId === gameId))) {
-        return { inSlot: true, slotIndex: i };
+  // 檢查玩家是否已在任何時段中（檢查所有官職類型）
+  const isPlayerInAnySlot = (playerId: string, gameId?: string): { inSlot: boolean; slotIndex?: number; officerType?: string } => {
+    // 檢查所有三種官職類型的時段
+    const types = ['research', 'training', 'building'] as const;
+    for (const type of types) {
+      const key = `${type}_slots`;
+      const slots = officers[key] || [];
+      for (let i = 0; i < slots.length; i++) {
+        const slot = slots[i];
+        // 同時檢查 id 和 gameId，以支持特殊新增的玩家
+        if (slot?.players?.find((p: any) => p.id === playerId || (gameId && p.gameId === gameId))) {
+          return { inSlot: true, slotIndex: i, officerType: type };
+        }
       }
     }
     return { inSlot: false };
@@ -572,7 +744,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, curren
       if (daySlot && daySlot.timeSlots) {
         for (const ts of daySlot.timeSlots) {
           if (ts.start && ts.end) {
-            preferredSlots.push(`${ts.start}~${ts.end}`);
+            preferredSlots.push(`${normalizeTimeString(ts.start)}~${normalizeTimeString(ts.end)}`);
           }
         }
       }
@@ -587,12 +759,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, curren
       // 檢查是否已在某個時段中
       const check = isPlayerInAnySlot(submission.id);
       if (check.inSlot) {
-        addToast(`${submission.playerName} 已在時段 ${check.slotIndex! + 1} 中，請先移除`, 'error');
+        const typeNames = { research: t('research'), training: t('training'), building: t('building') };
+        const typeName = typeNames[check.officerType as keyof typeof typeNames] || check.officerType;
+        addToast(`${submission.playerName} 已在${typeName}時段 ${check.slotIndex! + 1} 中，請先移除`, 'error');
         return;
       }
       setSelectedPlayer(submission);
       setHighlightedSlotIndex(null); // 選擇玩家時清除時段高亮
-      addToast(`已選擇 ${submission.playerName}，請點擊右邊時段添加`, 'info');
+      addToast(`${t('selectingPlayer')} ${submission.playerName}，${t('pleaseClickSlot')}`, 'info');
     }
   };
 
@@ -620,7 +794,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, curren
     // 檢查是否已在任何時段中
     const check = isPlayerInAnySlot(selectedPlayer.id);
     if (check.inSlot) {
-      addToast(`${selectedPlayer.playerName} 已在時段 ${check.slotIndex! + 1} 中，一人只能在一個時段`, 'error');
+      const typeNames = { research: t('research'), training: t('training'), building: t('building') };
+      const typeName = typeNames[check.officerType as keyof typeof typeNames] || check.officerType;
+      addToast(`${selectedPlayer.playerName} 已在${typeName}時段 ${check.slotIndex! + 1} 中，一人只能在一個時段`, 'error');
       setSelectedPlayer(null);
       return;
     }
@@ -642,7 +818,20 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, curren
       slot.players.push(playerData);
     }
     setOfficers(newOfficers);
-    addToast(`${selectedPlayer.playerName} 已分配至時段`, 'success');
+    addToast(`${selectedPlayer.playerName} ${t('allocatedSlot')}`, 'success');
+    
+    // 更新報名表單的時段資訊
+    const timeSlots = generateTimeSlots();
+    const assignedSlot = timeSlots[slotId];
+    if (assignedSlot) {
+      updateSubmissionTimeSlot(
+        selectedPlayer,
+        officerType,
+        assignedSlot.hour,
+        assignedSlot.minute
+      );
+    }
+    
     setSelectedPlayer(null); // 添加成功後清除選擇
     setHighlightedSlotIndex(null); // 清除時段高亮
     saveOfficers(newOfficers, false); // 自動保存
@@ -683,9 +872,25 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, curren
       }
       
       setOfficers(newOfficers);
-      addToast(`${draggedAssignedPlayer.player.playerName} 已移動至新時段`, 'success');
+      addToast(`${draggedAssignedPlayer.player.playerName} ${t('movedToNewSlot')}`, 'success');
       setDraggedAssignedPlayer(null);
       saveOfficers(newOfficers, false); // 自動保存
+      
+      // 更新報名表單的時段資訊（移動時段時）
+      const timeSlots = generateTimeSlots();
+      const assignedSlot = timeSlots[slotId];
+      if (assignedSlot) {
+        // 從 submissions 中找到對應的報名資料
+        const matchingSub = submissions.find(s => s.id === draggedAssignedPlayer.player.id);
+        if (matchingSub) {
+          updateSubmissionTimeSlot(
+            matchingSub,
+            officerType,
+            assignedSlot.hour,
+            assignedSlot.minute
+          );
+        }
+      }
       return;
     }
     
@@ -706,7 +911,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, curren
     // 檢查是否已在任何時段中
     const check = isPlayerInAnySlot(draggedPlayer.submission.id);
     if (check.inSlot) {
-      addToast(`${draggedPlayer.submission.playerName} 已在時段 ${check.slotIndex! + 1} 中，一人只能在一個時段`, 'error');
+      const typeNames = { research: t('research'), training: t('training'), building: t('building') };
+      const typeName = typeNames[check.officerType as keyof typeof typeNames] || check.officerType;
+      addToast(`${draggedPlayer.submission.playerName} 已在${typeName}時段 ${check.slotIndex! + 1} 中，一人只能在一個時段`, 'error');
       setDraggedPlayer(null);
       return;
     }
@@ -729,14 +936,87 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, curren
     }
     setOfficers(newOfficers);
     setDraggedPlayer(null);
-    addToast(`${draggedPlayer.submission.playerName} 已分配至時段`, 'success');
+    addToast(`${draggedPlayer.submission.playerName} ${t('allocatedSlot')}`, 'success');
     saveOfficers(newOfficers, false); // 自動保存
+    
+    // 更新報名表單的時段資訊
+    const timeSlots = generateTimeSlots();
+    const assignedSlot = timeSlots[slotId];
+    if (assignedSlot) {
+      updateSubmissionTimeSlot(
+        draggedPlayer.submission,
+        officerType,
+        assignedSlot.hour,
+        assignedSlot.minute
+      );
+    }
+  };
+
+  // 更新報名表單的時段資訊（當管理員分配官職時）
+  const updateSubmissionTimeSlot = async (
+    submission: FormSubmission,
+    type: 'research' | 'training' | 'building',
+    slotHour: number,
+    slotMinute: number
+  ) => {
+    try {
+      const slotKey = getSlotKeyByType(type);
+      const startTime = `${String(slotHour).padStart(2, '0')}:${String(slotMinute).padStart(2, '0')}`;
+      // 結束時間為開始時間 + 30 分鐘
+      const endMinutes = slotHour * 60 + slotMinute + 30;
+      const endHour = Math.floor(endMinutes / 60) % 24;
+      const endMin = endMinutes % 60;
+      const endTime = `${String(endHour).padStart(2, '0')}:${String(endMin).padStart(2, '0')}`;
+      
+      // 深拷貝原有的 slots
+      const updatedSlots = JSON.parse(JSON.stringify(submission.slots || {}));
+      
+      // 確保該天數的 slot 存在並初始化
+      if (!updatedSlots[slotKey]) {
+        updatedSlots[slotKey] = {
+          checked: true,
+          researchAccel: { days: 0, hours: 0, minutes: 0 },
+          generalAccel: { days: 0, hours: 0, minutes: 0 },
+          upgradeT11: false,
+          timeSlots: []
+        };
+      }
+      
+      // 設置為已勾選
+      updatedSlots[slotKey].checked = true;
+      
+      // 設置時段（替換為管理員指定的時段）
+      updatedSlots[slotKey].timeSlots = [{ start: startTime, end: endTime }];
+      
+      // 調用 API 更新
+      await FormService.adminUpdateSubmission(submission.id, {
+        slots: updatedSlots
+      });
+      
+      console.log(`✅ 已更新 ${submission.playerName} 的報名時段: ${slotKey} ${startTime}~${endTime}`);
+      
+      // 重新載入報名資料以保持同步
+      const allSubmissions = await DebugService.getAllSubmissions();
+      setSubmissions(allSubmissions);
+    } catch (error) {
+      console.error('更新報名時段失敗:', error);
+      // 不顯示錯誤訊息，因為官職分配本身已成功
+    }
   };
 
   // Load data on mount
   useEffect(() => {
     loadData();
     loadEventDates();
+    // 載入地圖數據
+    const savedMapData = localStorage.getItem('alliance_map_data');
+    if (savedMapData) {
+      try {
+        setMapData(JSON.parse(savedMapData));
+      } catch (e) {
+        console.error('Failed to load map data:', e);
+      }
+    }
   }, []);
 
   // 當場次日期變更時載入對應配置
@@ -749,15 +1029,136 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, curren
   const loadData = async () => {
     const allUsers = await DebugService.getAllUsers();
     const allSubmissions = await DebugService.getAllSubmissions();
+    console.log('📋 AdminDashboard loadData - users:', allUsers.length, 'submissions:', allSubmissions.length);
+    console.log('📋 AdminDashboard loadData - submissions details:', allSubmissions);
     setUsers(allUsers);
     setSubmissions(allSubmissions);
     await loadEvents(); // 載入場次列表
+    await loadMapList(); // 載入地圖列表
+  };
+
+  // 載入地圖列表
+  const loadMapList = async () => {
+    const maps = await MapService.getAllMaps();
+    setMapList(maps);
+  };
+
+  // 創建新地圖
+  const handleCreateMap = async () => {
+    if (!newMapTitle.trim()) {
+      addToast('請輸入地圖標題', 'error');
+      return;
+    }
+    const map = await MapService.createMap({ title: newMapTitle.trim() });
+    if (map) {
+      addToast('地圖創建成功', 'success');
+      setNewMapTitle('');
+      await loadMapList();
+      // 自動進入編輯模式
+      setEditingMapId(map.id);
+      setMapData({
+        alliances: map.alliances,
+        gridData: map.gridData,
+        gridOwners: map.gridOwners,
+      });
+      setShowMapEditor(true);
+    } else {
+      addToast('創建失敗', 'error');
+    }
+  };
+
+  // 編輯地圖
+  const handleEditMap = async (id: string) => {
+    const map = await MapService.getMap(id);
+    if (map) {
+      setEditingMapId(id);
+      setMapData({
+        alliances: map.alliances,
+        gridData: map.gridData,
+        gridOwners: map.gridOwners,
+      });
+      setShowMapEditor(true);
+    } else {
+      addToast('載入地圖失敗', 'error');
+    }
+  };
+
+  // 保存地圖（實時保存，不顯示 toast）
+  const handleSaveMap = async (data: any) => {
+    if (!editingMapId) return;
+    const result = await MapService.updateMap(editingMapId, data);
+    if (!result) {
+      addToast('保存失敗', 'error');
+    }
+  };
+
+  // 更新地圖狀態
+  const handleUpdateMapStatus = async (id: string, status: 'open' | 'closed') => {
+    const success = await MapService.updateMapStatus(id, status);
+    if (success) {
+      addToast(`地圖狀態已更新為${status === 'open' ? '開放' : '截止'}`, 'success');
+      await loadMapList();
+    } else {
+      addToast('更新失敗', 'error');
+    }
+  };
+
+  // 刪除地圖
+  const handleDeleteMap = async (id: string) => {
+    if (!window.confirm('確定要刪除此地圖嗎？此操作無法復原。')) return;
+    const success = await MapService.deleteMap(id);
+    if (success) {
+      addToast('地圖已刪除', 'success');
+      await loadMapList();
+    } else {
+      addToast('刪除失敗', 'error');
+    }
+  };
+
+  // 複製地圖
+  const handleDuplicateMap = async () => {
+    if (!editingMapId || !mapData) return;
+    const currentMap = mapList.find(m => m.id === editingMapId);
+    if (!currentMap) return;
+    
+    const newTitle = `${currentMap.title} (複製)`;
+    const result = await MapService.createMap({
+      title: newTitle,
+      alliances: mapData.alliances,
+      gridData: mapData.gridData,
+      gridOwners: mapData.gridOwners,
+    });
+    
+    if (result) {
+      addToast('地圖已複製', 'success');
+      await loadMapList();
+      // 切換到新地圖
+      setEditingMapId(result.id);
+      setMapData({
+        alliances: result.alliances,
+        gridData: result.gridData,
+        gridOwners: result.gridOwners,
+      });
+    } else {
+      addToast('複製失敗', 'error');
+    }
+  };
+
+  // 更新地圖標題
+  const handleUpdateMapTitle = async (newTitle: string) => {
+    if (!editingMapId) return;
+    const result = await MapService.updateMap(editingMapId, { title: newTitle });
+    if (result) {
+      await loadMapList();
+    } else {
+      addToast('標題更新失敗', 'error');
+    }
   };
 
   // 創建或更新場次
   const handleCreateEvent = async () => {
     if (!newEvent.eventDate || !newEvent.registrationStart || !newEvent.registrationEnd) {
-      addToast('請填寫場次日期、報名開始和結束時間', 'error');
+      addToast(t('fieldRequired'), 'error');
       return;
     }
     
@@ -768,10 +1169,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, curren
         registrationStart: newEvent.registrationStart,
         registrationEnd: newEvent.registrationEnd,
         description: newEvent.description,
-        dayConfig: newEvent.dayConfig
+        dayConfig: newEvent.dayConfig as Record<string, any>
       });
       if (result.success) {
-        addToast('場次更新成功', 'success');
+        addToast(t('eventUpdatedSuccess'), 'success');
         setShowEventModal(false);
         setEditingEvent(null);
         setNewEvent({ 
@@ -784,7 +1185,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, curren
         });
         loadEvents();
       } else {
-        addToast(result.error || '更新失敗', 'error');
+        addToast(result.error || t('eventUpdatedFailed'), 'error');
       }
     } else {
       // 創建場次
@@ -794,10 +1195,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, curren
         registrationStart: newEvent.registrationStart,
         registrationEnd: newEvent.registrationEnd,
         description: newEvent.description,
-        dayConfig: newEvent.dayConfig
+        dayConfig: newEvent.dayConfig as Record<string, any>
       });
       if (result.success) {
-        addToast('場次創建成功', 'success');
+        addToast(t('eventCreatedSuccess'), 'success');
         setShowEventModal(false);
         setNewEvent({ 
           eventDate: '', 
@@ -809,7 +1210,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, curren
         });
         loadEvents();
       } else {
-        addToast(result.error || '創建失敗', 'error');
+        addToast(result.error || t('eventCreatedFailed'), 'error');
       }
     }
   };
@@ -818,23 +1219,23 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, curren
   const handleUpdateEventStatus = async (eventDate: string, status: 'open' | 'closed' | 'disabled') => {
     const success = await EventService.updateEventStatus(eventDate, status);
     if (success) {
-      addToast('狀態更新成功', 'success');
+      addToast(t('eventStatusUpdated'), 'success');
       loadEvents();
     } else {
-      addToast('更新失敗', 'error');
+      addToast(t('eventStatusUpdateFailed'), 'error');
     }
   };
 
   // 刪除場次
   const handleDeleteEvent = async (eventDate: string) => {
-    if (!confirm('確定要刪除此場次嗎？')) return;
+    if (!confirm(t('deleteEventConfirm'))) return;
     
     const success = await EventService.deleteEvent(eventDate);
     if (success) {
-      addToast('場次已刪除', 'success');
+      addToast(t('eventDeletedSuccess'), 'success');
       loadEvents();
     } else {
-      addToast('刪除失敗', 'error');
+      addToast(t('eventDeletedFailed'), 'error');
     }
   };
 
@@ -852,32 +1253,30 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, curren
     const slotKey = getSlotKeyByType(submissionType);
     const slot = submission.slots[slotKey];
     
+    // 如果該時段沒有勾選，則不顯示
     if (!slot?.checked) return false;
     
+    // 根據類型進行細分篩選，但如果沒有任何數據也仍然顯示（因為他們報名了該時段）
     if (submissionType === 'research') {
       // 研究增益：科技加速 + 通用加速 + 火晶微粒
-      return (
-        (slot.researchAccel?.days! > 0 || slot.researchAccel?.hours! > 0 || slot.researchAccel?.minutes! > 0) ||
-        (slot.generalAccel?.days! > 0 || slot.generalAccel?.hours! > 0 || slot.generalAccel?.minutes! > 0) ||
-        slot.upgradeT11
-      );
+      // 即使沒有填寫數據，只要報名了該時段也要顯示
+      return true;
     } else if (submissionType === 'training') {
       // 訓練士兵增益：火晶餘燼 + 通用加速
-      return (
-        (slot.fireSparkleCount! > 0) ||
-        (slot.generalAccel?.days! > 0 || slot.generalAccel?.hours! > 0 || slot.generalAccel?.minutes! > 0)
-      );
+      // 即使沒有填寫數據，只要報名了該時段也要顯示
+      return true;
     } else if (submissionType === 'building') {
       // 建築增益：火晶 + 精煉火晶 + 通用加速
-      return (
-        (slot.fireGemCount! > 0 || slot.refinedFireGemCount! > 0) ||
-        (slot.generalAccel?.days! > 0 || slot.generalAccel?.hours! > 0 || slot.generalAccel?.minutes! > 0)
-      );
+      // 即使沒有填寫數據，只要報名了該時段也要顯示
+      return true;
     }
     return false;
   };
 
-  // Filter submissions based on search, alliance filter, type filter, and selected event
+  // 取得當前用戶可管理的聯盟列表（null 表示可管理所有聯盟）
+  const userManagedAlliances = currentUser?.managedAlliances;
+  
+  // Filter submissions based on search, alliance filter, selected event, and managed alliances
   const filteredSubmissions = submissions.filter(submission => {
     const matchSearch = 
       submission.playerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -885,30 +1284,87 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, curren
       submission.fid.includes(searchTerm);
     
     const matchAlliance = !filterAlliance || submission.alliance === filterAlliance;
-    const matchType = filterByType(submission);
     
-    // 如果在報名管理或官職管理中選擇了場次，只顯示該場次的報名
-    const matchEvent = !selectedEventForManagement || submission.eventDate === selectedEventForManagement.eventDate;
+    // 報名管理表格：僅在有明確選擇場次時才進行場次篩選；否則顯示所有場次的報名
+    // 官職管理表格：由其他邏輯控制，這裡不干預
+    // 若提交的 eventDate 為 null，則總是顯示（向後兼容舊資料）
+    const matchEvent = !selectedEventForManagement || submission.eventDate === null || submission.eventDate === selectedEventForManagement.eventDate;
     
-    return matchSearch && matchAlliance && matchType && matchEvent;
+    // 根據管理員權限過濾：如果 managedAlliances 為 null/undefined 表示可管理所有；否則只能看到指定聯盟
+    const matchManagedAlliances = !userManagedAlliances || userManagedAlliances.length === 0 || userManagedAlliances.includes(submission.alliance);
+    
+    const includeThis = matchSearch && matchAlliance && matchEvent && matchManagedAlliances;
+    return includeThis;
   });
 
-  // Filter users based on search
-  const filteredUsers = users.filter(user => 
-    (user.nickname?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false) ||
-    (user.gameId?.includes(searchTerm) ?? false) ||
-    (user.allianceName?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false)
-  );
+  // Filter users based on search and managed alliances
+  const filteredUsers = users.filter(user => {
+    const matchSearch = 
+      (user.nickname?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false) ||
+      (user.gameId?.includes(searchTerm) ?? false) ||
+      (user.allianceName?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false);
+    
+    // 根據管理員權限過濾：如果 managedAlliances 為 null/undefined 表示可管理所有；否則只能看到指定聯盟的用戶
+    const matchManagedAlliances = !userManagedAlliances || userManagedAlliances.length === 0 || 
+      (user.allianceName && userManagedAlliances.includes(user.allianceName));
+    
+    return matchSearch && matchManagedAlliances;
+  });
 
   // Get unique alliances for filter
   const alliances = Array.from(new Set(submissions.map(s => s.alliance).filter(Boolean)));
 
   const handleDeleteSubmission = async (submissionId: string) => {
-    if (confirm('確定要刪除此報名嗎？此操作無法復原。')) {
+    if (confirm(t('confirmDeleteSubmission_long'))) {
       await FormService.deleteSubmission(submissionId);
       const allSubmissions = await DebugService.getAllSubmissions();
       setSubmissions(allSubmissions);
-      addToast('報名已刪除', 'success');
+      addToast(t('submissionDeleted'), 'success');
+    }
+  };
+
+  // 開啟編輯報名資料彈窗
+  const openEditSubmissionModal = (submission: FormSubmission) => {
+    setSubmissionToEdit(submission);
+    setEditPlayerName(submission.playerName);
+    setEditAlliance(submission.alliance);
+    // 深拷貝並確保每個 slot 都有 timeSlots
+    const slotsCopy = JSON.parse(JSON.stringify(submission.slots));
+    ['tuesday', 'thursday', 'friday'].forEach(day => {
+      if (slotsCopy[day] && slotsCopy[day].checked) {
+        if (!slotsCopy[day].timeSlots || slotsCopy[day].timeSlots.length === 0) {
+          slotsCopy[day].timeSlots = [{ start: '', end: '' }];
+        }
+      }
+    });
+    setEditSlots(slotsCopy);
+    setShowEditSubmissionModal(true);
+  };
+
+  // 處理編輯報名資料
+  const handleEditSubmission = async () => {
+    if (!submissionToEdit) return;
+    
+    setEditingSubmission(true);
+    try {
+      await FormService.adminUpdateSubmission(submissionToEdit.id, {
+        playerName: editPlayerName,
+        alliance: editAlliance,
+        slots: editSlots,
+      });
+      
+      // 重新載入報名資料
+      const allSubmissions = await DebugService.getAllSubmissions();
+      setSubmissions(allSubmissions);
+      
+      addToast(t('submissionEditSuccess'), 'success');
+      setShowEditSubmissionModal(false);
+      setSubmissionToEdit(null);
+    } catch (error) {
+      console.error('Error editing submission:', error);
+      addToast(t('submissionEditFailed'), 'error');
+    } finally {
+      setEditingSubmission(false);
     }
   };
 
@@ -918,18 +1374,18 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, curren
     const trimmed = name.trim().toUpperCase();
     // 檢查長度
     if (trimmed.length !== 3) {
-      return '聯盟名稱必須是 3 個字符';
+      return t('allianceNameMust3Chars');
     }
     // 檢查只能是英文大小寫和數字
     if (!/^[A-Z0-9]{3}$/.test(trimmed)) {
-      return '只能輸入大小寫英文和數字';
+      return t('onlyEnglishNumbers');
     }
     return '';
   };
 
   const handleQuickAddSearch = async () => {
     if (!quickAddPlayerId.trim()) {
-      addToast('請輸入玩家 ID', 'error');
+      addToast(t('playerIdRequired'), 'error');
       return;
     }
     
@@ -961,7 +1417,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, curren
         addToast(`找到玩家: ${player.nickname}`, 'success');
       }
     } catch (error: any) {
-      addToast(error.message || '查詢玩家失敗', 'error');
+      addToast(error.message || t('playerQueryFailed'), 'error');
       setQuickAddPlayerData(null);
       setQuickAddIsExistingUser(false);
     } finally {
@@ -972,7 +1428,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, curren
   // 快速新增玩家 - 確認新增
   const handleQuickAddConfirm = async () => {
     if (!quickAddPlayerData || quickAddSlotIndex === null) {
-      addToast('請先查詢玩家資料', 'error');
+      addToast(t('playerDataRequired'), 'error');
       return;
     }
     
@@ -980,14 +1436,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, curren
     if (!quickAddIsExistingUser) {
       // 非會員需要選擇聯盟
       if (!quickAddAlliance) {
-        addToast('請選擇聯盟', 'error');
+        addToast(t('allianceSelectionRequired'), 'error');
         return;
       }
       
       // 如果是自訂聯盟，驗證格式
       if (quickAddAlliance === 'custom') {
         if (!quickAddCustomAlliance.trim()) {
-          addToast('請輸入自訂聯盟名稱', 'error');
+          addToast(t('customAllianceInputRequired'), 'error');
           return;
         }
         const validationError = validateAllianceName(quickAddCustomAlliance);
@@ -1025,7 +1481,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, curren
           }
         );
         if (!newUser) {
-          throw new Error('註冊用戶失敗');
+          throw new Error(t('userRegistrationFailed'));
         }
         userId = newUser.id;
         
@@ -1040,7 +1496,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, curren
         const existingUsers = await DebugService.getAllUsers();
         const existingUser = existingUsers.find((u: any) => u.gameId === quickAddPlayerId.trim());
         if (!existingUser) {
-          throw new Error('無法找到已存在的用戶');
+          throw new Error(t('userNotFound'));
         }
         userId = existingUser.id;
         playerAlliance = existingUser.allianceName || playerAlliance;
@@ -1108,7 +1564,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, curren
             gameId: quickAddPlayerId.trim(),
             playerName: quickAddPlayerData.nickname,
             alliance: playerAlliance,
-            slots: autoSlots
+            slots: autoSlots,
+            eventDate: selectedEventForManagement?.eventDate
           });
           addToast(`已自動提交 ${quickAddPlayerData.nickname} 的報名表單`, 'success');
           
@@ -1117,10 +1574,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, curren
           setSubmissions(allSubmissions);
         } catch (submitError: any) {
           // 如果已經報名過，不視為錯誤
-          if (submitError.message?.includes('已經報名過')) {
+          if (submitError.message?.includes(t('submissionExists'))) {
             addToast(`${quickAddPlayerData.nickname} 該日已有報名紀錄`, 'info');
           } else {
-            console.error('自動提交表單失敗:', submitError);
+            console.error(t('autoSubmitFormFailed'), submitError);
             addToast(`加入時段成功，但自動提交表單失敗: ${submitError.message}`, 'error');
           }
         }
@@ -1141,7 +1598,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, curren
       setQuickAddIsExistingUser(false);
       setQuickAddExistingUserAlliance('');
     } catch (error: any) {
-      addToast(error.message || '新增失敗', 'error');
+      addToast(error.message || t('submissionAddFailed'), 'error');
     } finally {
       setQuickAddLoading(false);
     }
@@ -1149,16 +1606,16 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, curren
 
   const exportToCSV = () => {
     // Build CSV data from submissions
-    const headers = ['報名ID', '會員ID', '遊戲ID', '遊戲名稱', '聯盟', '星期二', '星期四', '星期五', '報名時間'];
+    const headers = [t('gameId'), t('player'), t('gameId'), t('nickname'), t('alliance'), t('tuesday'), t('thursday'), t('friday'), t('registrationTime')];
     const rows = filteredSubmissions.map(s => [
       s.id,
       s.fid,
       s.gameId,
       s.playerName,
       s.alliance,
-      s.slots.tuesday?.checked ? `${s.slots.tuesday.timeSlots.map(t => `${t.start}-${t.end}`).join(', ')}` : '-',
-      s.slots.thursday?.checked ? `${s.slots.thursday.timeSlots.map(t => `${t.start}-${t.end}`).join(', ')}` : '-',
-      s.slots.friday?.checked ? `${s.slots.friday.timeSlots.map(t => `${t.start}-${t.end}`).join(', ')}` : '-',
+      s.slots.tuesday?.checked ? `${s.slots.tuesday.timeSlots.map(t => `${normalizeTimeString(t.start)}-${normalizeTimeString(t.end)}`).join(', ')}` : '-',
+      s.slots.thursday?.checked ? `${s.slots.thursday.timeSlots.map(t => `${normalizeTimeString(t.start)}-${normalizeTimeString(t.end)}`).join(', ')}` : '-',
+      s.slots.friday?.checked ? `${s.slots.friday.timeSlots.map(t => `${normalizeTimeString(t.start)}-${normalizeTimeString(t.end)}`).join(', ')}` : '-',
       new Date(s.submittedAt).toLocaleString('zh-TW')
     ]);
 
@@ -1173,7 +1630,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, curren
     link.download = `svs_submissions_${new Date().toISOString().split('T')[0]}.csv`;
     link.click();
 
-    addToast('已匯出報名資料', 'success');
+    addToast(t('exportSubmission'), 'success');
   };
 
   return (
@@ -1185,7 +1642,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, curren
             <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg flex items-center justify-center">
               <FileText size={24} className="text-white" />
             </div>
-            <h1 className="text-2xl font-bold text-white">WOS Manager - 後台管理</h1>
+            <h1 className="text-2xl font-bold text-white">WOS Manager - {t('adminDashboard')}</h1>
           </div>
           <div className="flex items-center gap-3">
             {onBackToPlayer && (
@@ -1194,7 +1651,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, curren
                 className="flex items-center gap-2 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition"
               >
                 <ArrowLeft size={18} />
-                返回玩家介面
+                {t('backToPlayerInterface')}
               </button>
             )}
             <button
@@ -1202,7 +1659,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, curren
               className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition"
             >
               <LogOut size={18} />
-              登出
+              {t('logout')}
             </button>
           </div>
         </div>
@@ -1267,34 +1724,52 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, curren
           >
             報名管理
           </button>
+          {/* 官職管理 - 需要 canAssignOfficers 權限 */}
+          {currentUser?.canAssignOfficers === true && (
+            <button
+              onClick={() => {
+                setActiveTab('officers');
+                setSelectedEventForManagement(null);
+              }}
+              className={`px-6 py-3 font-semibold border-b-2 transition ${
+                activeTab === 'officers'
+                  ? 'border-blue-500 text-blue-400'
+                  : 'border-transparent text-slate-400 hover:text-slate-300'
+              }`}
+            >
+              官職管理
+            </button>
+          )}
+          {/* 場次設定 - 需要 canManageEvents 權限 */}
+          {currentUser?.canManageEvents === true && (
+            <button
+              onClick={() => setActiveTab('events')}
+              className={`px-6 py-3 font-semibold border-b-2 transition ${
+                activeTab === 'events'
+                  ? 'border-blue-500 text-blue-400'
+                  : 'border-transparent text-slate-400 hover:text-slate-300'
+              }`}
+            >
+              <Settings className="w-4 h-4 inline mr-1" />
+              場次設定
+            </button>
+          )}
+          {/* 地圖管理 */}
           <button
-            onClick={() => {
-              setActiveTab('officers');
-              setSelectedEventForManagement(null);
-            }}
+            onClick={() => setActiveTab('map')}
             className={`px-6 py-3 font-semibold border-b-2 transition ${
-              activeTab === 'officers'
+              activeTab === 'map'
                 ? 'border-blue-500 text-blue-400'
                 : 'border-transparent text-slate-400 hover:text-slate-300'
             }`}
           >
-            官職管理
-          </button>
-          <button
-            onClick={() => setActiveTab('events')}
-            className={`px-6 py-3 font-semibold border-b-2 transition ${
-              activeTab === 'events'
-                ? 'border-blue-500 text-blue-400'
-                : 'border-transparent text-slate-400 hover:text-slate-300'
-            }`}
-          >
-            <Settings className="w-4 h-4 inline mr-1" />
-            場次設定
+            <Map className="w-4 h-4 inline mr-1" />
+            地圖管理
           </button>
         </div>
 
         {/* Content Sections */}
-        {activeTab === 'events' && (
+        {activeTab === 'events' && currentUser?.canManageEvents === true && (
           <div className="space-y-6">
             <div className="flex justify-between items-center">
               <h2 className="text-xl font-bold text-white">場次管理</h2>
@@ -1367,11 +1842,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, curren
                                   ? JSON.parse(event.dayConfig) 
                                   : event.dayConfig;
                                 
-                                if (!dayConfig) return '無';
+                                if (!dayConfig) return t('none');
                                 
                                 const dayNames: Record<string, string> = {
-                                  monday: '週一', tuesday: '週二', wednesday: '週三',
-                                  thursday: '週四', friday: '週五', saturday: '週六', sunday: '週日'
+                                  monday: t('monday'), tuesday: t('tuesday'), wednesday: t('wednesday'),
+                                  thursday: t('thursday'), friday: t('friday'), saturday: t('saturday'), sunday: t('sunday')
                                 };
                                 const configs: string[] = [];
                                 Object.entries(dayConfig).forEach(([day, type]) => {
@@ -1380,9 +1855,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, curren
                                     configs.push(`${dayNames[day]}-${activityName}`);
                                   }
                                 });
-                                return configs.length > 0 ? configs.join(' ') : '無';
+                                return configs.length > 0 ? configs.join(' ') : t('none');
                               } catch (e) {
-                                return '無';
+                                return t('none');
                               }
                             })()}
                           </div>
@@ -1419,14 +1894,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, curren
                               setShowEventModal(true);
                             }}
                             className="p-1 text-blue-400 hover:text-blue-300 hover:bg-blue-900/30 rounded"
-                            title="編輯場次"
+                            title={t('editEventTitle')}
                           >
                             <Edit className="w-4 h-4" />
                           </button>
                           <button
                             onClick={() => handleDeleteEvent(event.eventDate)}
                             className="p-1 text-red-400 hover:text-red-300 hover:bg-red-900/30 rounded"
-                            title="刪除場次"
+                            title={t('deleteEventTitle')}
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>
@@ -1444,7 +1919,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, curren
                 <div className="bg-slate-800 rounded-lg border border-slate-700 w-full max-w-2xl max-h-[90vh] flex flex-col">
                   <div className="flex justify-between items-center p-6 border-b border-slate-700">
                     <h3 className="text-lg font-bold text-white">
-                      {editingEvent ? '編輯場次' : '新增場次'}
+                      {editingEvent ? t('editEventTitle') : '新增場次'}
                     </h3>
                     <button
                       onClick={() => {
@@ -1452,7 +1927,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, curren
                         setEditingEvent(null);
                       }}
                       className="p-1 text-slate-400 hover:text-slate-200 hover:bg-slate-700/50 rounded transition"
-                      title="關閉"
+                      title={t('close_button')}
                     >
                       <X className="w-5 h-5" />
                     </button>
@@ -1476,12 +1951,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, curren
                           type="text"
                           value={newEvent.title}
                           onChange={(e) => setNewEvent({ ...newEvent, title: e.target.value })}
-                          placeholder="例如：SVS 第一週"
+                          placeholder={t('exampleEventTitle')}
                           className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
                         />
                       </div>
                       <div>
-                        <label className="block text-sm text-slate-400 mb-1">報名開始時間 * (您輸入的是本地時間)</label>
+                        <label className="block text-sm text-slate-400 mb-1">報名開始時間 * (UTC 時區)</label>
                         <input
                           type="datetime-local"
                           value={newEvent.registrationStart}
@@ -1496,7 +1971,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, curren
                         )}
                       </div>
                       <div>
-                        <label className="block text-sm text-slate-400 mb-1">報名結束時間 * (您輸入的是本地時間)</label>
+                        <label className="block text-sm text-slate-400 mb-1">報名結束時間 * (UTC 時區)</label>
                         <input
                           type="datetime-local"
                           value={newEvent.registrationEnd}
@@ -1515,7 +1990,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, curren
                         <textarea
                           value={newEvent.description}
                           onChange={(e) => setNewEvent({ ...newEvent, description: e.target.value })}
-                          placeholder="場次說明..."
+                          placeholder={t('eventDescription')}
                           rows={3}
                           className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
                         />
@@ -1527,8 +2002,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, curren
                         <div className="grid grid-cols-2 gap-2">
                           {['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'].map((day) => {
                             const dayNames: Record<string, string> = {
-                              monday: '週一', tuesday: '週二', wednesday: '週三',
-                              thursday: '週四', friday: '週五', saturday: '週六', sunday: '週日'
+                              monday: t('monday'), tuesday: t('tuesday'), wednesday: t('wednesday'),
+                              thursday: t('thursday'), friday: t('friday'), saturday: t('saturday'), sunday: t('sunday')
                             };
                             
                             // 檢查新增的活動類型是否已在其他天設定
@@ -1536,7 +2011,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, curren
                               const newActivityType = selectedValue as ActivityType;
                               
                               // 檢查是否選了「無」
-                              if (newActivityType === 'none') {
+                              if (newActivityType === ('none' as ActivityType)) {
                                 setNewEvent({
                                   ...newEvent,
                                   dayConfig: { ...newEvent.dayConfig, [day]: newActivityType }
@@ -1552,8 +2027,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, curren
                               if (existingDay) {
                                 // 警告用戶並清空舊的設定
                                 const oldDay = existingDay[0];
-                                const dayName = { monday: '週一', tuesday: '週二', wednesday: '週三', thursday: '週四', friday: '週五', saturday: '週六', sunday: '週日' }[oldDay];
-                                addToast(`⚠️ 已自動清除${dayName}的設定，因為每種增益只能設在一天`, 'warning');
+                                const dayName = { monday: t('monday'), tuesday: t('tuesday'), wednesday: t('wednesday'), thursday: t('thursday'), friday: t('friday'), saturday: t('saturday'), sunday: t('sunday') }[oldDay];
+                                addToast(`⚠️ 已自動清除${dayName}的設定，因為每種增益只能設在一天`, 'info');
                                 
                                 const updatedConfig = { ...newEvent.dayConfig };
                                 updatedConfig[oldDay] = 'none';
@@ -1602,7 +2077,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, curren
                       onClick={handleCreateEvent}
                       className="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition"
                     >
-                      {editingEvent ? '更新' : '創建'}
+                      {editingEvent ? t('updateSubmission') : '創建'}
                     </button>
                   </div>
                 </div>
@@ -1612,7 +2087,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, curren
         )}
 
         {/* Officers Tab */}
-        {activeTab === 'officers' && (
+        {activeTab === 'officers' && currentUser?.canAssignOfficers === true && (
           <div className="space-y-6">
             {/* 場次選擇界面 */}
             {!selectedEventForManagement ? (
@@ -1783,7 +2258,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, curren
                   onClick={() => handleAutoAssign('accel')}
                   disabled={isLoadingOfficers}
                   className="px-4 py-2 bg-purple-600 hover:bg-purple-700 disabled:bg-slate-600 text-white rounded-lg transition font-semibold text-sm"
-                  title="分配未分配的玩家，按加速資源多寡排序（保留已分配）"
+                  title={t('assignPlayersAccel')}
                 >
                   ⚡ 依加速排定
                 </button>
@@ -1792,7 +2267,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, curren
                     onClick={() => handleAutoAssign('fireSparkle')}
                     disabled={isLoadingOfficers}
                     className="px-4 py-2 bg-pink-600 hover:bg-pink-700 disabled:bg-slate-600 text-white rounded-lg transition font-semibold text-sm"
-                    title="分配未分配的玩家，按火晶微粒多寡排序（保留已分配）"
+                    title={t('assignPlayersFireSparkle')}
                   >
                     ✨ 依火晶微粒排定
                   </button>
@@ -1803,7 +2278,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, curren
                       onClick={() => handleAutoAssign('fireGem')}
                       disabled={isLoadingOfficers}
                       className="px-4 py-2 bg-orange-600 hover:bg-orange-700 disabled:bg-slate-600 text-white rounded-lg transition font-semibold text-sm"
-                      title="分配未分配的玩家，按火晶多寡排序（保留已分配）"
+                      title={t('assignPlayersFireGem')}
                     >
                       💎 依火晶排定
                     </button>
@@ -1811,7 +2286,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, curren
                       onClick={() => handleAutoAssign('refinedFireGem')}
                       disabled={isLoadingOfficers}
                       className="px-4 py-2 bg-fuchsia-600 hover:bg-fuchsia-700 disabled:bg-slate-600 text-white rounded-lg transition font-semibold text-sm"
-                      title="分配未分配的玩家，按精煉火晶多寡排序（保留已分配）"
+                      title={t('assignPlayersRefinedFireGem')}
                     >
                       💠 依精煉火晶排定
                     </button>
@@ -1821,7 +2296,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, curren
                   onClick={handleClearAllAssignments}
                   disabled={isLoadingOfficers}
                   className="px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-slate-600 text-white rounded-lg transition font-semibold text-sm"
-                  title="清除此官職類型的所有排定"
+                  title={t('clearAllSlotAssignments')}
                 >
                   🗑️ 清除排定
                 </button>
@@ -1833,7 +2308,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, curren
                 disabled={isLoadingOfficers}
                 className="px-6 py-2 bg-green-600 hover:bg-green-700 disabled:bg-slate-600 text-white rounded-lg transition font-semibold"
               >
-                {isLoadingOfficers ? '載入中...' : '保存配置'}
+                {isLoadingOfficers ? t('loading_short') : t('saveConfiguration')}
               </button>
             </div>
 
@@ -1847,7 +2322,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, curren
                   {/* 搜索欄 */}
                   <input
                     type="text"
-                    placeholder="搜尋 ID 或名字..."
+                    placeholder={t('searchIdOrName')}
                     value={officerSearch}
                     onChange={(e) => setOfficerSearch(e.target.value)}
                     className="w-full px-3 py-1.5 bg-slate-700 border border-slate-600 rounded text-white text-sm placeholder-slate-400 focus:outline-none focus:border-teal-500"
@@ -2066,7 +2541,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, curren
                               }
                             }}
                             className="w-8 h-8 rounded-full flex items-center justify-center bg-amber-600 hover:bg-amber-500 text-white text-lg flex-shrink-0 cursor-pointer transition"
-                            title="點擊跳轉到已分配的時段"
+                            title={t('scrollToAssignedSlot')}
                           >
                             📍
                           </button>
@@ -2230,7 +2705,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, curren
                                 setShowQuickAddModal(true);
                               }}
                               className="flex items-center gap-1 px-2 py-1 bg-orange-600 hover:bg-orange-700 rounded text-white text-xs transition ml-auto"
-                              title="特殊新增：新增不在可用名單中的玩家"
+                              title={t('quickAddPlayer_title')}
                             >
                               <UserPlus size={14} />
                               <span>特殊新增</span>
@@ -2254,7 +2729,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, curren
             <div className="flex gap-4">
               <input
                 type="text"
-                placeholder="搜尋會員（ID、暱稱、聯盟）..."
+                placeholder={t('searchMemberPlaceholder')}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="flex-1 px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
@@ -2278,29 +2753,61 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, curren
                       <td className="px-6 py-3 text-white text-center">{user.nickname || '-'}</td>
                       <td className="px-6 py-3 text-white text-center">{user.allianceName || '-'}</td>
                       <td className="px-6 py-3 text-center">
-                        {user.isAdmin ? <span className="text-green-400 font-bold">✔</span> : <span className="text-slate-500">—</span>}
+                        {user.isAdmin ? (
+                          <div className="flex flex-col items-center gap-1">
+                            <span className="text-green-400 font-bold">✔</span>
+                            {user.managedAlliances === null || user.managedAlliances === undefined ? (
+                              <span className="text-xs text-slate-400">全部聯盟</span>
+                            ) : user.managedAlliances.length > 0 ? (
+                              <span className="text-xs text-cyan-400">{user.managedAlliances.join(', ')}</span>
+                            ) : (
+                              <span className="text-xs text-red-400">無權限</span>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-slate-500">—</span>
+                        )}
                       </td>
                       <td className="px-6 py-3 text-center">
                         <div className="flex items-center justify-center gap-2">
                           {/* 只有超級管理員才能設定管理員權限 */}
                           {currentUser?.gameId === SUPER_ADMIN_ID && user.gameId !== 'admin' && user.gameId !== SUPER_ADMIN_ID && (
                             user.isAdmin ? (
-                              <button
-                                onClick={async () => {
-                                  await AuthService.setAdmin(user.gameId, false);
-                                  addToast('已取消管理員', 'info');
-                                  setUsers(users => users.map(u => u.gameId === user.gameId ? { ...u, isAdmin: false } : u));
-                                }}
-                                className="px-3 py-1 bg-red-700 hover:bg-red-800 text-white rounded text-xs"
-                              >
-                                取消管理員
-                              </button>
+                              <>
+                                <button
+                                  onClick={() => {
+                                    setUserToSetAdmin(user);
+                                    setManageAllAlliances(user.managedAlliances === null || user.managedAlliances === undefined);
+                                    setSelectedManagedAlliances(user.managedAlliances || []);
+                                    setCanAssignOfficers(user.canAssignOfficers !== false);
+                                    setCanManageEvents(user.canManageEvents !== false);
+                                    setShowAdminSettingsModal(true);
+                                  }}
+                                  className="px-3 py-1 bg-purple-600 hover:bg-purple-700 text-white rounded text-xs"
+                                  title="設定管理權限"
+                                >
+                                  ⚙️ 權限
+                                </button>
+                                <button
+                                  onClick={async () => {
+                                    await AuthService.setAdmin(user.gameId, false);
+                                    addToast(t('removeAdminRole'), 'info');
+                                    setUsers(users => users.map(u => u.gameId === user.gameId ? { ...u, isAdmin: false, managedAlliances: null } : u));
+                                  }}
+                                  className="px-3 py-1 bg-red-700 hover:bg-red-800 text-white rounded text-xs"
+                                >
+                                  取消管理員
+                                </button>
+                              </>
                             ) : (
                               <button
-                                onClick={async () => {
-                                  await AuthService.setAdmin(user.gameId, true);
-                                  addToast('已設為管理員', 'success');
-                                  setUsers(users => users.map(u => u.gameId === user.gameId ? { ...u, isAdmin: true } : u));
+                                onClick={() => {
+                                  setUserToSetAdmin(user);
+                                  setManageAllAlliances(true);
+                                  setSelectedManagedAlliances([]);
+                                  setCanAssignOfficers(true);
+                                  setCanManageEvents(true);
+                                  setShowAdminSettingsModal(true);
                                 }}
                                 className="px-3 py-1 bg-blue-700 hover:bg-blue-800 text-white rounded text-xs"
                               >
@@ -2310,16 +2817,29 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, curren
                           )}
                           {/* 刪除用戶按鈕 - 管理員可用，不能刪除超級管理員和自己 */}
                           {user.gameId !== 'admin' && user.gameId !== SUPER_ADMIN_ID && user.gameId !== currentUser?.gameId && (
-                            <button
-                              onClick={() => {
-                                setUserToDelete(user);
-                                setShowDeleteUserModal(true);
-                              }}
-                              className="px-2 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-xs"
-                              title="刪除用戶"
-                            >
-                              <Trash2 className="w-3 h-3" />
-                            </button>
+                            <>
+                              <button
+                                onClick={() => {
+                                  setUserToResetPassword(user);
+                                  setNewPassword('');
+                                  setShowResetPasswordModal(true);
+                                }}
+                                className="px-2 py-1 bg-amber-600 hover:bg-amber-700 text-white rounded text-xs"
+                                title={t('resetPassword')}
+                              >
+                                🔑
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setUserToDelete(user);
+                                  setShowDeleteUserModal(true);
+                                }}
+                                className="px-2 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-xs"
+                                title={t('deleteUserTitle')}
+                              >
+                                <Trash2 className="w-3 h-3" />
+                              </button>
+                            </>
                           )}
                         </div>
                       </td>
@@ -2363,8 +2883,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, curren
                         </tr>
                       ) : (
                         events.map(event => {
-                          // 計算該場次的報名人數
-                          const eventSubmissions = submissions.filter(s => s.eventDate === event.eventDate);
+                          // 計算該場次的報名人數（包括舊資料 eventDate 為 null）
+                          const eventSubmissions = submissions.filter(s => s.eventDate === null || s.eventDate === event.eventDate);
                           const startTimes = formatTimeWithTimezones(event.registrationStart, true);
                           const endTimes = formatTimeWithTimezones(event.registrationEnd, true);
                           return (
@@ -2385,7 +2905,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, curren
                                       ? 'bg-yellow-600 text-white'
                                       : 'bg-slate-600 text-slate-300'
                                 }`}>
-                                  {event.status === 'open' ? '開放報名' : event.status === 'closed' ? '截止報名' : '關閉'}
+                                  {event.status === 'open' ? t('open') : event.status === 'closed' ? t('closed') : t('close_button')}
                                 </span>
                               </td>
                               <td className="px-4 py-3 text-center">
@@ -2474,7 +2994,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, curren
             <div className="flex gap-4 flex-wrap">
               <input
                 type="text"
-                placeholder="搜尋報名（ID、名稱、遊戲ID）..."
+                placeholder={t('searchMemberPlaceholder')}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="flex-1 min-w-64 px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
@@ -2549,20 +3069,22 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, curren
                             </span>
                           </td>
                           {submissionType === 'research' && (() => {
-                            const slot = submission.slots.tuesday;
+                            const slot = submission.slots?.tuesday;
+                            const formatAccel = (accel?: { days: number; hours: number; minutes: number }) => {
+                              if (!accel) return '-';
+                              const parts = [];
+                              if (accel.days > 0) parts.push(`${accel.days}天`);
+                              if (accel.hours > 0) parts.push(`${accel.hours}時`);
+                              if (accel.minutes > 0) parts.push(`${accel.minutes}分`);
+                              return parts.length > 0 ? parts.join('') : '-';
+                            };
                             return (
                               <>
                                 <td className="px-6 py-3 text-white font-semibold text-xs">
-                                  {slot && (slot.researchAccel?.days! > 0 || slot.researchAccel?.hours! > 0 || slot.researchAccel?.minutes! > 0)
-                                    ? `${slot.researchAccel.days}天${slot.researchAccel.hours}h${slot.researchAccel.minutes}m`
-                                    : '-'
-                                  }
+                                  {formatAccel(slot?.researchAccel)}
                                 </td>
                                 <td className="px-6 py-3 text-white font-semibold text-xs">
-                                  {slot && (slot.generalAccel?.days! > 0 || slot.generalAccel?.hours! > 0 || slot.generalAccel?.minutes! > 0)
-                                    ? `${slot.generalAccel.days}天${slot.generalAccel.hours}h${slot.generalAccel.minutes}m`
-                                    : '-'
-                                  }
+                                  {formatAccel(slot?.generalAccel)}
                                 </td>
                                 <td className="px-6 py-3 text-white font-semibold text-xs">
                                   {slot?.upgradeT11 && slot.fireSparkleCount ? slot.fireSparkleCount : '-'}
@@ -2571,36 +3093,46 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, curren
                             );
                           })()}
                           {submissionType === 'training' && (() => {
-                            const slot = submission.slots.thursday;
+                            const slot = submission.slots?.thursday;
+                            const formatAccel = (accel?: { days: number; hours: number; minutes: number }) => {
+                              if (!accel) return '-';
+                              const parts = [];
+                              if (accel.days > 0) parts.push(`${accel.days}天`);
+                              if (accel.hours > 0) parts.push(`${accel.hours}時`);
+                              if (accel.minutes > 0) parts.push(`${accel.minutes}分`);
+                              return parts.length > 0 ? parts.join('') : '-';
+                            };
                             return (
                               <>
                                 <td className="px-6 py-3 text-white font-semibold text-xs">
-                                  {slot && slot.fireSparkleCount! > 0 ? slot.fireSparkleCount : '-'}
+                                  {formatAccel(slot?.researchAccel)}
                                 </td>
                                 <td className="px-6 py-3 text-white font-semibold text-xs">
-                                  {slot && (slot.generalAccel?.days! > 0 || slot.generalAccel?.hours! > 0 || slot.generalAccel?.minutes! > 0)
-                                    ? `${slot.generalAccel.days}天${slot.generalAccel.hours}h${slot.generalAccel.minutes}m`
-                                    : '-'
-                                  }
+                                  {formatAccel(slot?.generalAccel)}
                                 </td>
                               </>
                             );
                           })()}
                           {submissionType === 'building' && (() => {
-                            const slot = submission.slots.friday;
+                            const slot = submission.slots?.friday;
+                            const formatAccel = (accel?: { days: number; hours: number; minutes: number }) => {
+                              if (!accel) return '-';
+                              const parts = [];
+                              if (accel.days > 0) parts.push(`${accel.days}天`);
+                              if (accel.hours > 0) parts.push(`${accel.hours}時`);
+                              if (accel.minutes > 0) parts.push(`${accel.minutes}分`);
+                              return parts.length > 0 ? parts.join('') : '-';
+                            };
                             return (
                               <>
                                 <td className="px-6 py-3 text-white font-semibold text-xs">
-                                  {slot && slot.fireGemCount! > 0 ? slot.fireGemCount : '-'}
+                                  {slot?.fireGemCount ? slot.fireGemCount : '-'}
                                 </td>
                                 <td className="px-6 py-3 text-white font-semibold text-xs">
-                                  {slot && slot.refinedFireGemCount! > 0 ? slot.refinedFireGemCount : '-'}
+                                  {slot?.refinedFireGemCount ? slot.refinedFireGemCount : '-'}
                                 </td>
                                 <td className="px-6 py-3 text-white font-semibold text-xs">
-                                  {slot && (slot.generalAccel?.days! > 0 || slot.generalAccel?.hours! > 0 || slot.generalAccel?.minutes! > 0)
-                                    ? `${slot.generalAccel.days}天${slot.generalAccel.hours}h${slot.generalAccel.minutes}m`
-                                    : '-'
-                                  }
+                                  {formatAccel(slot?.generalAccel)}
                                 </td>
                               </>
                             );
@@ -2615,11 +3147,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, curren
                                 
                                 return slot.timeSlots.map((ts: any, idx: number) => {
                                   if (!ts.start || !ts.end) return null;
-                                  const labels = ['🥇 第一志願', '🥈 第二志願', '🥉 第三志願'];
+                                  const labels = ['🥇 ' + t('preferenceLevel').split('|')[0], '🥈 ' + t('preferenceLevel').split('|')[1], '🥉 ' + t('preferenceLevel').split('|')[2]];
                                   const colors = ['text-green-300', 'text-blue-300', 'text-purple-300'];
                                   return (
                                     <div key={idx} className={colors[idx] || 'text-slate-300'}>
-                                      {labels[idx] || `第${idx + 1}志願`}: {ts.start}-{ts.end}
+                                      {labels[idx] || `第${idx + 1}志願`}: {formatTimeRangeWithTaiwan(ts.start, ts.end)}
                                     </div>
                                   );
                                 });
@@ -2639,6 +3171,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, curren
                             >
                               <Eye size={14} />
                               詳情
+                            </button>
+                            <button
+                              onClick={() => openEditSubmissionModal(submission)}
+                              className="inline-flex items-center gap-1 px-3 py-1 bg-amber-900/30 hover:bg-amber-900/50 text-amber-300 rounded transition text-xs"
+                            >
+                              <Edit size={14} />
+                              {t('edit')}
                             </button>
                             <button
                               onClick={() => handleDeleteSubmission(submission.id)}
@@ -2693,7 +3232,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, curren
                     
                     const [dayKey, slot] = checkedEntry as [string, any];
                     const typeLabels: Record<string, string> = {
-                      tuesday: '🔬 研究科技增益',
+                      tuesday: '🔬 ' + t('researchAccel'),
                       thursday: '🎖️ 士兵訓練增益',
                       friday: '🏗️ 建築訓練增益'
                     };
@@ -2711,7 +3250,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, curren
                             const colors = ['text-green-300', 'text-blue-300', 'text-purple-300'];
                             return (
                               <p key={idx} className={colors[idx] || 'text-slate-300'}>
-                                {labels[idx] || `第${idx + 1}志願`}: {ts.start} - {ts.end}
+                                {labels[idx] || `第${idx + 1}志願`}: {formatTimeRangeWithTaiwan(ts.start, ts.end)}
                               </p>
                             );
                           })}
@@ -2729,7 +3268,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, curren
                           )}
                           {dayKey === 'thursday' && (
                             <>
-                              <p>火晶餘燼: {slot.fireSparkleCount || 0}</p>
+                              <p>士兵訓練加速: {slot.researchAccel?.days || 0}天 {slot.researchAccel?.hours || 0}小時 {slot.researchAccel?.minutes || 0}分</p>
                               <p>通用加速: {slot.generalAccel?.days || 0}天 {slot.generalAccel?.hours || 0}小時 {slot.generalAccel?.minutes || 0}分</p>
                             </>
                           )}
@@ -2774,6 +3313,156 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, curren
         </div>
       )}
 
+      {/* 地圖管理 */}
+      {activeTab === 'map' && (
+        <div className="space-y-6">
+          {!showMapEditor ? (
+            <>
+              {/* 新增地圖 */}
+              <div className="bg-slate-800 rounded-lg border border-slate-700 p-4">
+                <h3 className="text-lg font-semibold text-white mb-4">新增地圖</h3>
+                <div className="flex gap-4">
+                  <input
+                    type="text"
+                    value={newMapTitle}
+                    onChange={(e) => setNewMapTitle(e.target.value)}
+                    placeholder="輸入地圖標題..."
+                    className="flex-1 px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-blue-500"
+                    onKeyPress={(e) => e.key === 'Enter' && handleCreateMap()}
+                  />
+                  <button
+                    onClick={handleCreateMap}
+                    className="px-6 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg font-semibold hover:opacity-90 transition flex items-center gap-2"
+                  >
+                    <Plus size={18} /> 新增地圖
+                  </button>
+                </div>
+              </div>
+
+              {/* 地圖列表 */}
+              <div className="space-y-4">
+                {/* 操作欄位 */}
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => {
+                      const mapList = mapList.map(m => `◆ ${m.title} (建立時間: ${new Date(m.createdAt).toLocaleDateString('zh-TW')})`).join('\n');
+                      navigator.clipboard.writeText(mapList).then(() => {
+                        alert('地圖列表已複製');
+                      }).catch(() => {
+                        alert('複製失敗');
+                      });
+                    }}
+                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg flex items-center gap-2 transition text-sm font-semibold"
+                  >
+                    複製地圖列表
+                  </button>
+                </div>
+
+                {/* 地圖列表表格 */}
+                <div className="bg-slate-800 rounded-lg border border-slate-700 overflow-hidden">
+                  <table className="w-full">
+                    <thead className="bg-slate-900">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">標題</th>
+                        <th className="px-6 py-3 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">建立日期</th>
+                        <th className="px-6 py-3 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">狀態</th>
+                        <th className="px-6 py-3 text-center text-xs font-semibold text-slate-400 uppercase tracking-wider">操作</th>
+                      </tr>
+                  </thead>
+                  <tbody>
+                    {mapList.length === 0 ? (
+                      <tr>
+                        <td colSpan={4} className="px-6 py-8 text-center text-slate-400">
+                          尚未創建任何地圖
+                        </td>
+                      </tr>
+                    ) : (
+                      mapList.map(map => (
+                        <tr key={map.id} className="border-b border-slate-700 hover:bg-slate-900/50 transition">
+                          <td className="px-6 py-4 text-white font-semibold">{map.title}</td>
+                          <td className="px-6 py-4 text-slate-300">
+                            {new Date(map.createdAt).toLocaleDateString('zh-TW', {
+                              year: 'numeric',
+                              month: '2-digit',
+                              day: '2-digit',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })}
+                          </td>
+                          <td className="px-6 py-4">
+                            <button
+                              onClick={() => handleUpdateMapStatus(map.id, map.status === 'open' ? 'closed' : 'open')}
+                              className={`px-3 py-1 rounded-full text-xs font-semibold transition ${
+                                map.status === 'open'
+                                  ? 'bg-green-900/30 text-green-400 hover:bg-green-900/50'
+                                  : 'bg-red-900/30 text-red-400 hover:bg-red-900/50'
+                              }`}
+                            >
+                              {map.status === 'open' ? '✓ 開放' : '✕ 截止'}
+                            </button>
+                          </td>
+                          <td className="px-6 py-4 text-center">
+                            <div className="flex items-center justify-center gap-2">
+                              <button
+                                onClick={() => handleEditMap(map.id)}
+                                className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm font-semibold transition flex items-center gap-1"
+                              >
+                                <Edit size={14} /> 編輯
+                              </button>
+                              <button
+                                onClick={() => handleDeleteMap(map.id)}
+                                className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-sm font-semibold transition flex items-center gap-1"
+                              >
+                                <Trash2 size={14} /> 刪除
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+                </div>
+              </div>
+            </>
+          ) : (
+            <>
+              {/* 返回按鈕 */}
+              <div className="flex items-center gap-4 mb-4">
+                <button
+                  onClick={() => {
+                    setShowMapEditor(false);
+                    setEditingMapId(null);
+                    setMapData(null);
+                    loadMapList();
+                  }}
+                  className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg font-semibold transition flex items-center gap-2"
+                >
+                  <ArrowLeft size={18} /> 返回列表
+                </button>
+              </div>
+              
+              {/* 地圖編輯器 */}
+              <AllianceMapEditor
+                initialData={mapData}
+                title={mapList.find(m => m.id === editingMapId)?.title}
+                onTitleChange={handleUpdateMapTitle}
+                onDuplicate={handleDuplicateMap}
+                players={users.map(u => ({
+                  gameId: u.gameId,
+                  nickname: u.nickname || undefined,
+                  allianceName: u.allianceName || undefined,
+                }))}
+                onSave={async (data) => {
+                  await handleSaveMap(data);
+                  setMapData(data);
+                }}
+              />
+            </>
+          )}
+        </div>
+      )}
+
       {/* 特殊新增玩家 Modal */}
       {showQuickAddModal && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
@@ -2810,7 +3499,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, curren
                     type="text"
                     value={quickAddPlayerId}
                     onChange={(e) => setQuickAddPlayerId(e.target.value)}
-                    placeholder="輸入玩家遊戲 ID"
+                    placeholder={t('gameIdPlaceholder')}
                     className="flex-1 px-3 py-2 bg-slate-700 border border-slate-600 rounded text-white placeholder-slate-400 focus:outline-none focus:border-teal-500"
                   />
                   <button
@@ -2819,7 +3508,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, curren
                     className="px-4 py-2 bg-teal-600 hover:bg-teal-700 disabled:bg-slate-600 text-white rounded transition flex items-center gap-1"
                   >
                     <Search size={16} />
-                    {quickAddLoading ? '查詢中...' : '查詢'}
+                    {quickAddLoading ? t('searching') : '查詢'}
                   </button>
                 </div>
               </div>
@@ -2861,7 +3550,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, curren
               {quickAddPlayerData && !quickAddIsExistingUser && (
                 <>
                   <div>
-                    <label className="block text-slate-300 text-sm mb-2">選擇聯盟 <span className="text-red-400">*</span></label>
+                    <label className="block text-slate-300 text-sm mb-2">{t('allianceLabel_form')} <span className="text-red-400">*</span></label>
                     <select
                       value={quickAddAlliance}
                       onChange={(e) => {
@@ -2889,7 +3578,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, curren
                   {/* 自訂聯盟輸入 */}
                   {quickAddShowCustom && (
                     <div>
-                      <label className="block text-slate-300 text-sm mb-2">自訂聯盟名稱 <span className="text-red-400">*</span></label>
+                      <label className="block text-slate-300 text-sm mb-2">{t('customAllianceLabel')} <span className="text-red-400">*</span></label>
                       <input
                         type="text"
                         value={quickAddCustomAlliance}
@@ -2897,7 +3586,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, curren
                           const value = e.target.value.toUpperCase().slice(0, 3);
                           setQuickAddCustomAlliance(value);
                         }}
-                        placeholder="輸入 3 個字符（英文/數字）"
+                        placeholder={t('enter3CharAlphanum_admin')}
                         maxLength={3}
                         className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded text-white placeholder-slate-400 focus:outline-none focus:border-teal-500 uppercase"
                       />
@@ -2951,7 +3640,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, curren
                 className="flex-1 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-600 disabled:cursor-not-allowed text-white font-semibold rounded-lg transition flex items-center justify-center gap-2"
               >
                 <UserPlus size={16} />
-                {quickAddLoading ? '處理中...' : '確認新增'}
+                {quickAddLoading ? t('processing') : t('confirmAddPlayerButton')}
               </button>
             </div>
           </div>
@@ -2976,9 +3665,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, curren
                   />
                 )}
                 <div>
-                  <p className="text-white font-semibold">{userToDelete.nickname || '未設定暱稱'}</p>
+                  <p className="text-white font-semibold">{userToDelete.nickname || t('nicknameFallback')}</p>
                   <p className="text-slate-400 text-sm font-mono">ID: {userToDelete.gameId}</p>
-                  <p className="text-slate-400 text-sm">聯盟: {userToDelete.allianceName || '-'}</p>
+                  <p className="text-slate-400 text-sm">{t('alliance')}: {userToDelete.allianceName || '-'}</p>
                 </div>
               </div>
             </div>
@@ -3002,7 +3691,632 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, curren
                 className="flex-1 py-2 bg-red-600 hover:bg-red-700 disabled:bg-slate-600 disabled:cursor-not-allowed text-white font-semibold rounded-lg transition flex items-center justify-center gap-2"
               >
                 <Trash2 size={16} />
-                {deletingUser ? '刪除中...' : '確認刪除'}
+                {deletingUser ? t('deleting') : t('confirmDeleteButton')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 重設密碼 Modal */}
+      {showResetPasswordModal && userToResetPassword && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+          <div className="bg-slate-800 rounded-xl p-6 w-full max-w-md border border-slate-700">
+            <h3 className="text-xl font-bold text-white mb-4">🔑 {t('resetPasswordTitle')}</h3>
+            <div className="bg-slate-900 rounded-lg p-4 mb-4">
+              <div className="flex items-center gap-3">
+                {userToResetPassword.avatarImage && (
+                  <img
+                    src={userToResetPassword.avatarImage}
+                    alt="Avatar"
+                    className="w-12 h-12 rounded-full object-cover"
+                  />
+                )}
+                <div>
+                  <p className="text-white font-semibold">{userToResetPassword.nickname || t('nicknameFallback')}</p>
+                  <p className="text-slate-400 text-sm font-mono">ID: {userToResetPassword.gameId}</p>
+                  <p className="text-slate-400 text-sm">{t('alliance')}: {userToResetPassword.allianceName || '-'}</p>
+                </div>
+              </div>
+            </div>
+            <div className="mb-4">
+              <label className="block text-slate-300 text-sm mb-2">{t('newPassword')}</label>
+              <input
+                type="text"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder={t('passwordMinLength')}
+                className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded text-white placeholder-slate-400 focus:outline-none focus:border-amber-500"
+              />
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setShowResetPasswordModal(false);
+                  setUserToResetPassword(null);
+                  setNewPassword('');
+                }}
+                className="flex-1 py-2 bg-slate-700 hover:bg-slate-600 text-white font-semibold rounded-lg transition"
+                disabled={resettingPassword}
+              >
+                {t('cancelButton')}
+              </button>
+              <button
+                onClick={handleResetPassword}
+                disabled={resettingPassword || newPassword.length < 6}
+                className="flex-1 py-2 bg-amber-600 hover:bg-amber-700 disabled:bg-slate-600 disabled:cursor-not-allowed text-white font-semibold rounded-lg transition flex items-center justify-center gap-2"
+              >
+                🔑
+                {resettingPassword ? t('processing') : t('confirmResetPassword')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 管理員權限設定 Modal */}
+      {showAdminSettingsModal && userToSetAdmin && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+          <div className="bg-slate-800 rounded-xl p-6 w-full max-w-md border border-slate-700">
+            <h3 className="text-xl font-bold text-white mb-4">⚙️ 管理員權限設定</h3>
+            <div className="bg-slate-900 rounded-lg p-4 mb-4">
+              <div className="flex items-center gap-3">
+                {userToSetAdmin.avatarImage && (
+                  <img
+                    src={userToSetAdmin.avatarImage}
+                    alt="Avatar"
+                    className="w-12 h-12 rounded-full object-cover"
+                  />
+                )}
+                <div>
+                  <p className="text-white font-semibold">{userToSetAdmin.nickname || t('nicknameFallback')}</p>
+                  <p className="text-slate-400 text-sm font-mono">ID: {userToSetAdmin.gameId}</p>
+                  <p className="text-slate-400 text-sm">{t('alliance')}: {userToSetAdmin.allianceName || '-'}</p>
+                </div>
+              </div>
+            </div>
+            
+            {/* 權限範圍選擇 */}
+            <div className="mb-4">
+              <label className="block text-slate-300 text-sm mb-3">管理範圍</label>
+              <div className="space-y-3">
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="allianceScope"
+                    checked={manageAllAlliances}
+                    onChange={() => {
+                      setManageAllAlliances(true);
+                      setSelectedManagedAlliances([]);
+                    }}
+                    className="w-4 h-4 text-blue-600"
+                  />
+                  <span className="text-white">可管理所有聯盟</span>
+                </label>
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="allianceScope"
+                    checked={!manageAllAlliances}
+                    onChange={() => setManageAllAlliances(false)}
+                    className="w-4 h-4 text-blue-600"
+                  />
+                  <span className="text-white">僅管理指定聯盟</span>
+                </label>
+              </div>
+            </div>
+
+            {/* 聯盟多選 */}
+            {!manageAllAlliances && (
+              <div className="mb-4">
+                <label className="block text-slate-300 text-sm mb-2">選擇可管理的聯盟</label>
+                <div className="bg-slate-900 rounded-lg p-3 grid grid-cols-3 gap-2">
+                  {ALLIANCE_OPTIONS.map(alliance => (
+                    <label key={alliance} className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={selectedManagedAlliances.includes(alliance)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setSelectedManagedAlliances([...selectedManagedAlliances, alliance]);
+                          } else {
+                            setSelectedManagedAlliances(selectedManagedAlliances.filter(a => a !== alliance));
+                          }
+                        }}
+                        className="w-4 h-4 rounded text-blue-600"
+                      />
+                      <span className="text-white text-sm font-semibold">{alliance}</span>
+                    </label>
+                  ))}
+                </div>
+                {selectedManagedAlliances.length === 0 && (
+                  <p className="text-amber-400 text-xs mt-2">⚠️ 請至少選擇一個聯盟</p>
+                )}
+              </div>
+            )}
+
+            {/* 功能權限設定 */}
+            <div className="mb-4">
+              <label className="block text-slate-300 text-sm mb-3">功能權限</label>
+              <div className="space-y-3 bg-slate-900 rounded-lg p-3">
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={canAssignOfficers}
+                    onChange={(e) => setCanAssignOfficers(e.target.checked)}
+                    className="w-4 h-4 rounded text-blue-600"
+                  />
+                  <span className="text-white">可分配官職</span>
+                </label>
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={canManageEvents}
+                    onChange={(e) => setCanManageEvents(e.target.checked)}
+                    className="w-4 h-4 rounded text-blue-600"
+                  />
+                  <span className="text-white">可設定場次</span>
+                </label>
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setShowAdminSettingsModal(false);
+                  setUserToSetAdmin(null);
+                }}
+                className="flex-1 py-2 bg-slate-700 hover:bg-slate-600 text-white font-semibold rounded-lg transition"
+              >
+                {t('cancelButton')}
+              </button>
+              <button
+                onClick={async () => {
+                  const managedAlliances = manageAllAlliances ? null : selectedManagedAlliances;
+                  if (!manageAllAlliances && selectedManagedAlliances.length === 0) {
+                    addToast('請至少選擇一個聯盟', 'error');
+                    return;
+                  }
+                  await AuthService.setAdmin(userToSetAdmin.gameId, true, managedAlliances, canAssignOfficers, canManageEvents);
+                  addToast(userToSetAdmin.isAdmin ? '管理員權限已更新' : t('setAsAdminRole'), 'success');
+                  setUsers(users => users.map(u => 
+                    u.gameId === userToSetAdmin.gameId 
+                      ? { ...u, isAdmin: true, managedAlliances, canAssignOfficers, canManageEvents } 
+                      : u
+                  ));
+                  setShowAdminSettingsModal(false);
+                  setUserToSetAdmin(null);
+                }}
+                disabled={!manageAllAlliances && selectedManagedAlliances.length === 0}
+                className="flex-1 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-600 disabled:cursor-not-allowed text-white font-semibold rounded-lg transition flex items-center justify-center gap-2"
+              >
+                ✓ {userToSetAdmin.isAdmin ? '更新權限' : '確認設為管理員'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 編輯報名資料 Modal */}
+      {showEditSubmissionModal && submissionToEdit && editSlots && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <div className="bg-slate-800 rounded-xl p-6 w-full max-w-2xl border border-slate-700 my-4">
+            <h3 className="text-xl font-bold text-white mb-4">✏️ {t('editSubmissionTitle')}</h3>
+            
+            {/* 基本資料 */}
+            <div className="space-y-4 mb-6">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-slate-300 text-sm mb-2">{t('gameId')}</label>
+                  <input
+                    type="text"
+                    value={submissionToEdit.gameId}
+                    disabled
+                    className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded text-slate-400 cursor-not-allowed"
+                  />
+                </div>
+                <div>
+                  <label className="block text-slate-300 text-sm mb-2">{t('playerNameLabel')}</label>
+                  <input
+                    type="text"
+                    value={editPlayerName}
+                    onChange={(e) => setEditPlayerName(e.target.value)}
+                    className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded text-white focus:outline-none focus:border-amber-500"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-slate-300 text-sm mb-2">{t('allianceLabel')}</label>
+                <input
+                  type="text"
+                  value={editAlliance}
+                  onChange={(e) => setEditAlliance(e.target.value.toUpperCase())}
+                  maxLength={3}
+                  className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded text-white focus:outline-none focus:border-amber-500"
+                />
+              </div>
+            </div>
+
+            {/* 報名時段資料 */}
+            <div className="border-t border-slate-700 pt-4">
+              <h4 className="text-white font-semibold mb-4">報名時段資料</h4>
+              
+              {/* 研究增益 (Tuesday) */}
+              {editSlots.tuesday?.checked && (
+                <div className="bg-slate-700/50 rounded-lg p-4 mb-4 border border-slate-600">
+                  <p className="text-cyan-400 font-semibold mb-3">🧬 研究增益報名</p>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-slate-400 text-xs mb-1">研究加速 (天/時/分)</label>
+                      <div className="flex gap-2">
+                        <input
+                          type="number"
+                          min="0"
+                          value={editSlots.tuesday?.researchAccel?.days || 0}
+                          onChange={(e) => setEditSlots({...editSlots, tuesday: {...editSlots.tuesday, researchAccel: {...editSlots.tuesday?.researchAccel, days: parseInt(e.target.value) || 0}}})}
+                          className="w-20 px-2 py-1 bg-slate-600 border border-slate-500 rounded text-white text-sm"
+                        />
+                        <input
+                          type="number"
+                          min="0"
+                          max="23"
+                          value={editSlots.tuesday?.researchAccel?.hours || 0}
+                          onChange={(e) => setEditSlots({...editSlots, tuesday: {...editSlots.tuesday, researchAccel: {...editSlots.tuesday?.researchAccel, hours: parseInt(e.target.value) || 0}}})}
+                          className="w-20 px-2 py-1 bg-slate-600 border border-slate-500 rounded text-white text-sm"
+                        />
+                        <input
+                          type="number"
+                          min="0"
+                          max="59"
+                          value={editSlots.tuesday?.researchAccel?.minutes || 0}
+                          onChange={(e) => setEditSlots({...editSlots, tuesday: {...editSlots.tuesday, researchAccel: {...editSlots.tuesday?.researchAccel, minutes: parseInt(e.target.value) || 0}}})}
+                          className="w-20 px-2 py-1 bg-slate-600 border border-slate-500 rounded text-white text-sm"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-slate-400 text-xs mb-1">通用加速 (天/時/分)</label>
+                      <div className="flex gap-2">
+                        <input
+                          type="number"
+                          min="0"
+                          value={editSlots.tuesday?.generalAccel?.days || 0}
+                          onChange={(e) => setEditSlots({...editSlots, tuesday: {...editSlots.tuesday, generalAccel: {...editSlots.tuesday?.generalAccel, days: parseInt(e.target.value) || 0}}})}
+                          className="w-20 px-2 py-1 bg-slate-600 border border-slate-500 rounded text-white text-sm"
+                        />
+                        <input
+                          type="number"
+                          min="0"
+                          max="23"
+                          value={editSlots.tuesday?.generalAccel?.hours || 0}
+                          onChange={(e) => setEditSlots({...editSlots, tuesday: {...editSlots.tuesday, generalAccel: {...editSlots.tuesday?.generalAccel, hours: parseInt(e.target.value) || 0}}})}
+                          className="w-20 px-2 py-1 bg-slate-600 border border-slate-500 rounded text-white text-sm"
+                        />
+                        <input
+                          type="number"
+                          min="0"
+                          max="59"
+                          value={editSlots.tuesday?.generalAccel?.minutes || 0}
+                          onChange={(e) => setEditSlots({...editSlots, tuesday: {...editSlots.tuesday, generalAccel: {...editSlots.tuesday?.generalAccel, minutes: parseInt(e.target.value) || 0}}})}
+                          className="w-20 px-2 py-1 bg-slate-600 border border-slate-500 rounded text-white text-sm"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-slate-400 text-xs mb-1">火晶餘燼數量</label>
+                      <input
+                        type="number"
+                        min="0"
+                        value={editSlots.tuesday?.fireSparkleCount || 0}
+                        onChange={(e) => setEditSlots({...editSlots, tuesday: {...editSlots.tuesday, fireSparkleCount: parseInt(e.target.value) || 0}})}
+                        className="w-full px-2 py-1 bg-slate-600 border border-slate-500 rounded text-white text-sm"
+                      />
+                    </div>
+                  </div>
+                  
+                  {/* 時段選擇 - 研究 */}
+                  <div className="mt-4 pt-4 border-t border-slate-600">
+                    <label className="block text-slate-400 text-xs mb-2">{t('acceptableTimeslots') || '可接受的時段'}</label>
+                    <div className="space-y-2">
+                      {(editSlots.tuesday?.timeSlots || [{ start: '', end: '' }]).map((ts: any, index: number) => (
+                        <div key={index} className="flex gap-2 items-center">
+                          <select
+                            value={ts.start ? parseInt(ts.start.split(':')[0]) : ''}
+                            onChange={(e) => handleEditTimeSlotChange('tuesday', index, 'start', parseInt(e.target.value))}
+                            className="flex-1 px-2 py-1 bg-slate-600 border border-slate-500 rounded text-white text-xs"
+                          >
+                            <option value="">{t('startTimeLabel') || '開始時間'}</option>
+                            {timeOptions.map(opt => (
+                              <option key={opt.value} value={opt.value}>{opt.label}</option>
+                            ))}
+                          </select>
+                          <span className="text-slate-400 text-xs">～</span>
+                          <select
+                            value={ts.end ? parseInt(ts.end.split(':')[0]) : ''}
+                            onChange={(e) => handleEditTimeSlotChange('tuesday', index, 'end', parseInt(e.target.value))}
+                            className="flex-1 px-2 py-1 bg-slate-600 border border-slate-500 rounded text-white text-xs"
+                          >
+                            <option value="">{t('endTimeLabel') || '結束時間'}</option>
+                            {timeOptions.map(opt => (
+                              <option key={opt.value} value={opt.value}>{opt.label}</option>
+                            ))}
+                          </select>
+                          {(editSlots.tuesday?.timeSlots?.length || 0) > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => removeEditTimeSlot('tuesday', index)}
+                              className="p-1 hover:bg-slate-600 rounded text-slate-400 hover:text-red-400 transition"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                    {(editSlots.tuesday?.timeSlots?.length || 0) < 3 && (
+                      <button
+                        type="button"
+                        onClick={() => addEditTimeSlot('tuesday')}
+                        className="mt-2 px-2 py-1 bg-slate-600 hover:bg-slate-500 text-white text-xs rounded flex items-center gap-1 transition"
+                      >
+                        <Plus size={12} />
+                        {t('addTimeSlot') || '添加時段'}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* 訓練增益 (Thursday) */}
+              {editSlots.thursday?.checked && (
+                <div className="bg-slate-700/50 rounded-lg p-4 mb-4 border border-slate-600">
+                  <p className="text-orange-400 font-semibold mb-3">⚔️ 訓練士兵增益報名</p>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-slate-400 text-xs mb-1">訓練加速 (天/時/分)</label>
+                      <div className="flex gap-2">
+                        <input
+                          type="number"
+                          min="0"
+                          value={editSlots.thursday?.researchAccel?.days || 0}
+                          onChange={(e) => setEditSlots({...editSlots, thursday: {...editSlots.thursday, researchAccel: {...editSlots.thursday?.researchAccel, days: parseInt(e.target.value) || 0}}})}
+                          className="w-20 px-2 py-1 bg-slate-600 border border-slate-500 rounded text-white text-sm"
+                        />
+                        <input
+                          type="number"
+                          min="0"
+                          max="23"
+                          value={editSlots.thursday?.researchAccel?.hours || 0}
+                          onChange={(e) => setEditSlots({...editSlots, thursday: {...editSlots.thursday, researchAccel: {...editSlots.thursday?.researchAccel, hours: parseInt(e.target.value) || 0}}})}
+                          className="w-20 px-2 py-1 bg-slate-600 border border-slate-500 rounded text-white text-sm"
+                        />
+                        <input
+                          type="number"
+                          min="0"
+                          max="59"
+                          value={editSlots.thursday?.researchAccel?.minutes || 0}
+                          onChange={(e) => setEditSlots({...editSlots, thursday: {...editSlots.thursday, researchAccel: {...editSlots.thursday?.researchAccel, minutes: parseInt(e.target.value) || 0}}})}
+                          className="w-20 px-2 py-1 bg-slate-600 border border-slate-500 rounded text-white text-sm"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-slate-400 text-xs mb-1">通用加速 (天/時/分)</label>
+                      <div className="flex gap-2">
+                        <input
+                          type="number"
+                          min="0"
+                          value={editSlots.thursday?.generalAccel?.days || 0}
+                          onChange={(e) => setEditSlots({...editSlots, thursday: {...editSlots.thursday, generalAccel: {...editSlots.thursday?.generalAccel, days: parseInt(e.target.value) || 0}}})}
+                          className="w-20 px-2 py-1 bg-slate-600 border border-slate-500 rounded text-white text-sm"
+                        />
+                        <input
+                          type="number"
+                          min="0"
+                          max="23"
+                          value={editSlots.thursday?.generalAccel?.hours || 0}
+                          onChange={(e) => setEditSlots({...editSlots, thursday: {...editSlots.thursday, generalAccel: {...editSlots.thursday?.generalAccel, hours: parseInt(e.target.value) || 0}}})}
+                          className="w-20 px-2 py-1 bg-slate-600 border border-slate-500 rounded text-white text-sm"
+                        />
+                        <input
+                          type="number"
+                          min="0"
+                          max="59"
+                          value={editSlots.thursday?.generalAccel?.minutes || 0}
+                          onChange={(e) => setEditSlots({...editSlots, thursday: {...editSlots.thursday, generalAccel: {...editSlots.thursday?.generalAccel, minutes: parseInt(e.target.value) || 0}}})}
+                          className="w-20 px-2 py-1 bg-slate-600 border border-slate-500 rounded text-white text-sm"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* 時段選擇 - 訓練 */}
+                  <div className="mt-4 pt-4 border-t border-slate-600">
+                    <label className="block text-slate-400 text-xs mb-2">{t('acceptableTimeslots') || '可接受的時段'}</label>
+                    <div className="space-y-2">
+                      {(editSlots.thursday?.timeSlots || [{ start: '', end: '' }]).map((ts: any, index: number) => (
+                        <div key={index} className="flex gap-2 items-center">
+                          <select
+                            value={ts.start ? parseInt(ts.start.split(':')[0]) : ''}
+                            onChange={(e) => handleEditTimeSlotChange('thursday', index, 'start', parseInt(e.target.value))}
+                            className="flex-1 px-2 py-1 bg-slate-600 border border-slate-500 rounded text-white text-xs"
+                          >
+                            <option value="">{t('startTimeLabel') || '開始時間'}</option>
+                            {timeOptions.map(opt => (
+                              <option key={opt.value} value={opt.value}>{opt.label}</option>
+                            ))}
+                          </select>
+                          <span className="text-slate-400 text-xs">～</span>
+                          <select
+                            value={ts.end ? parseInt(ts.end.split(':')[0]) : ''}
+                            onChange={(e) => handleEditTimeSlotChange('thursday', index, 'end', parseInt(e.target.value))}
+                            className="flex-1 px-2 py-1 bg-slate-600 border border-slate-500 rounded text-white text-xs"
+                          >
+                            <option value="">{t('endTimeLabel') || '結束時間'}</option>
+                            {timeOptions.map(opt => (
+                              <option key={opt.value} value={opt.value}>{opt.label}</option>
+                            ))}
+                          </select>
+                          {(editSlots.thursday?.timeSlots?.length || 0) > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => removeEditTimeSlot('thursday', index)}
+                              className="p-1 hover:bg-slate-600 rounded text-slate-400 hover:text-red-400 transition"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                    {(editSlots.thursday?.timeSlots?.length || 0) < 3 && (
+                      <button
+                        type="button"
+                        onClick={() => addEditTimeSlot('thursday')}
+                        className="mt-2 px-2 py-1 bg-slate-600 hover:bg-slate-500 text-white text-xs rounded flex items-center gap-1 transition"
+                      >
+                        <Plus size={12} />
+                        {t('addTimeSlot') || '添加時段'}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* 建築增益 (Friday) */}
+              {editSlots.friday?.checked && (
+                <div className="bg-slate-700/50 rounded-lg p-4 mb-4 border border-slate-600">
+                  <p className="text-amber-400 font-semibold mb-3">🏗️ 建築增益報名</p>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-slate-400 text-xs mb-1">火晶數量</label>
+                      <input
+                        type="number"
+                        min="0"
+                        value={editSlots.friday?.fireGemCount || 0}
+                        onChange={(e) => setEditSlots({...editSlots, friday: {...editSlots.friday, fireGemCount: parseInt(e.target.value) || 0}})}
+                        className="w-full px-2 py-1 bg-slate-600 border border-slate-500 rounded text-white text-sm"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-slate-400 text-xs mb-1">精煉火晶數量</label>
+                      <input
+                        type="number"
+                        min="0"
+                        value={editSlots.friday?.refinedFireGemCount || 0}
+                        onChange={(e) => setEditSlots({...editSlots, friday: {...editSlots.friday, refinedFireGemCount: parseInt(e.target.value) || 0}})}
+                        className="w-full px-2 py-1 bg-slate-600 border border-slate-500 rounded text-white text-sm"
+                      />
+                    </div>
+                    <div className="col-span-2">
+                      <label className="block text-slate-400 text-xs mb-1">建築加速 (天/時/分)</label>
+                      <div className="flex gap-2">
+                        <input
+                          type="number"
+                          min="0"
+                          value={editSlots.friday?.generalAccel?.days || 0}
+                          onChange={(e) => setEditSlots({...editSlots, friday: {...editSlots.friday, generalAccel: {...editSlots.friday?.generalAccel, days: parseInt(e.target.value) || 0}}})}
+                          className="w-20 px-2 py-1 bg-slate-600 border border-slate-500 rounded text-white text-sm"
+                        />
+                        <input
+                          type="number"
+                          min="0"
+                          max="23"
+                          value={editSlots.friday?.generalAccel?.hours || 0}
+                          onChange={(e) => setEditSlots({...editSlots, friday: {...editSlots.friday, generalAccel: {...editSlots.friday?.generalAccel, hours: parseInt(e.target.value) || 0}}})}
+                          className="w-20 px-2 py-1 bg-slate-600 border border-slate-500 rounded text-white text-sm"
+                        />
+                        <input
+                          type="number"
+                          min="0"
+                          max="59"
+                          value={editSlots.friday?.generalAccel?.minutes || 0}
+                          onChange={(e) => setEditSlots({...editSlots, friday: {...editSlots.friday, generalAccel: {...editSlots.friday?.generalAccel, minutes: parseInt(e.target.value) || 0}}})}
+                          className="w-20 px-2 py-1 bg-slate-600 border border-slate-500 rounded text-white text-sm"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* 時段選擇 - 建築 */}
+                  <div className="mt-4 pt-4 border-t border-slate-600">
+                    <label className="block text-slate-400 text-xs mb-2">{t('acceptableTimeslots') || '可接受的時段'}</label>
+                    <div className="space-y-2">
+                      {(editSlots.friday?.timeSlots || [{ start: '', end: '' }]).map((ts: any, index: number) => (
+                        <div key={index} className="flex gap-2 items-center">
+                          <select
+                            value={ts.start ? parseInt(ts.start.split(':')[0]) : ''}
+                            onChange={(e) => handleEditTimeSlotChange('friday', index, 'start', parseInt(e.target.value))}
+                            className="flex-1 px-2 py-1 bg-slate-600 border border-slate-500 rounded text-white text-xs"
+                          >
+                            <option value="">{t('startTimeLabel') || '開始時間'}</option>
+                            {timeOptions.map(opt => (
+                              <option key={opt.value} value={opt.value}>{opt.label}</option>
+                            ))}
+                          </select>
+                          <span className="text-slate-400 text-xs">～</span>
+                          <select
+                            value={ts.end ? parseInt(ts.end.split(':')[0]) : ''}
+                            onChange={(e) => handleEditTimeSlotChange('friday', index, 'end', parseInt(e.target.value))}
+                            className="flex-1 px-2 py-1 bg-slate-600 border border-slate-500 rounded text-white text-xs"
+                          >
+                            <option value="">{t('endTimeLabel') || '結束時間'}</option>
+                            {timeOptions.map(opt => (
+                              <option key={opt.value} value={opt.value}>{opt.label}</option>
+                            ))}
+                          </select>
+                          {(editSlots.friday?.timeSlots?.length || 0) > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => removeEditTimeSlot('friday', index)}
+                              className="p-1 hover:bg-slate-600 rounded text-slate-400 hover:text-red-400 transition"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                    {(editSlots.friday?.timeSlots?.length || 0) < 3 && (
+                      <button
+                        type="button"
+                        onClick={() => addEditTimeSlot('friday')}
+                        className="mt-2 px-2 py-1 bg-slate-600 hover:bg-slate-500 text-white text-xs rounded flex items-center gap-1 transition"
+                      >
+                        <Plus size={12} />
+                        {t('addTimeSlot') || '添加時段'}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* 沒有任何勾選的時段 */}
+              {!editSlots.tuesday?.checked && !editSlots.thursday?.checked && !editSlots.friday?.checked && (
+                <p className="text-slate-500 text-center py-4">無報名時段資料</p>
+              )}
+            </div>
+
+            {/* 按鈕 */}
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={() => {
+                  setShowEditSubmissionModal(false);
+                  setSubmissionToEdit(null);
+                  setEditSlots(null);
+                }}
+                className="flex-1 py-2 bg-slate-700 hover:bg-slate-600 text-white font-semibold rounded-lg transition"
+                disabled={editingSubmission}
+              >
+                {t('cancelButton')}
+              </button>
+              <button
+                onClick={handleEditSubmission}
+                disabled={editingSubmission || !editPlayerName || !editAlliance}
+                className="flex-1 py-2 bg-amber-600 hover:bg-amber-700 disabled:bg-slate-600 disabled:cursor-not-allowed text-white font-semibold rounded-lg transition flex items-center justify-center gap-2"
+              >
+                <Edit size={16} />
+                {editingSubmission ? t('processing') : t('save')}
               </button>
             </div>
           </div>

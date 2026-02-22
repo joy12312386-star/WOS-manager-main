@@ -55,6 +55,9 @@ export interface User {
   kid?: number;
   createdAt?: number;
   isAdmin?: boolean; // 是否為管理員
+  managedAlliances?: string[] | null; // 管理員可管理的聯盟列表，null 表示可管理所有聯盟
+  canAssignOfficers?: boolean; // 是否可分配官職
+  canManageEvents?: boolean; // 是否可設定場次
 }
 
 export interface SlotSubmission {
