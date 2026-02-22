@@ -946,7 +946,23 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ user, player
         addToast(t('submissionUpdated'), 'success');
         setEditingId(null);
       } else {
-        await FormService.submitForm({
+        // 確保 slots 不為空
+        if (!confirmData.slots || Object.keys(confirmData.slots).length === 0) {
+          addToast('報名資料為空，請選擇至少一個日期', 'error');
+          setLoading(false);
+          return;
+        }
+
+        console.log('📤 提交報名資料:', {
+          gameId: confirmData.gameId,
+          playerName: confirmData.playerName,
+          alliance: confirmData.alliance,
+          eventDate: confirmData.eventDate,
+          slotsCount: Object.keys(confirmData.slots).length,
+          slots: confirmData.slots
+        });
+
+        const result = await FormService.submitForm({
           userId: user.id,
           fid: playerData.fid,
           gameId: confirmData.gameId,
@@ -955,6 +971,13 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ user, player
           slots: confirmData.slots,
           eventDate: confirmData.eventDate
         });
+
+        console.log('✅ 後端返回:', result);
+        
+        if (!result) {
+          throw new Error('後端返回空的結果');
+        }
+
         addToast(t('submissionSuccess'), 'success');
 
         setFormData(prev => ({
@@ -983,6 +1006,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ user, player
       setShowConfirmModal(false);
       setConfirmData(null);
     } catch (err) {
+      console.error('❌ 提交失敗:', err);
       addToast(err instanceof Error ? err.message : t('submitFailed'), 'error');
     } finally {
       setLoading(false);

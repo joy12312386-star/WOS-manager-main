@@ -521,6 +521,20 @@ export class FormService {
   }): Promise<any> {
     try {
       const token = AuthService.getToken();
+      
+      // 驗證提交資料
+      if (!data.slots || Object.keys(data.slots).length === 0) {
+        throw new Error('Slots data is empty');
+      }
+
+      console.log('📤 FormService.submitForm - 發送資料:', {
+        gameId: data.gameId,
+        playerName: data.playerName,
+        alliance: data.alliance,
+        eventDate: data.eventDate,
+        slotsCount: Object.keys(data.slots).length
+      });
+
       const response = await fetch(this.getApiUrl(`/submissions`), {
         method: 'POST',
         headers: {
@@ -530,14 +544,18 @@ export class FormService {
         body: JSON.stringify(data)
       });
 
+      console.log('📥 FormService.submitForm - 收到響應:', response.status, response.statusText);
+
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || 'Failed to submit form');
+        throw new Error(errorData.error || `HTTP ${response.status}: Failed to submit form`);
       }
 
-      return await response.json();
+      const result = await response.json();
+      console.log('✅ FormService.submitForm - 成功:', result);
+      return result;
     } catch (error) {
-      console.error('Error submitting form:', error);
+      console.error('❌ FormService.submitForm 錯誤:', error);
       throw error;
     }
   }
@@ -554,6 +572,20 @@ export class FormService {
   }): Promise<any> {
     try {
       const token = AuthService.getToken();
+      
+      // 驗證提交資料
+      if (!data.slots || Object.keys(data.slots).length === 0) {
+        throw new Error('Slots data is empty');
+      }
+
+      console.log('📤 FormService.adminSubmitForm - 發送資料:', {
+        gameId: data.gameId,
+        playerName: data.playerName,
+        alliance: data.alliance,
+        eventDate: data.eventDate,
+        slotsCount: Object.keys(data.slots).length
+      });
+
       const response = await fetch(this.getApiUrl(`/submissions/admin-submit`), {
         method: 'POST',
         headers: {
@@ -563,14 +595,18 @@ export class FormService {
         body: JSON.stringify(data)
       });
 
+      console.log('📥 FormService.adminSubmitForm - 收到響應:', response.status, response.statusText);
+
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || 'Failed to submit form');
+        throw new Error(errorData.error || `HTTP ${response.status}: Failed to submit form`);
       }
 
-      return await response.json();
+      const result = await response.json();
+      console.log('✅ FormService.adminSubmitForm - 成功:', result);
+      return result;
     } catch (error) {
-      console.error('Error admin submitting form:', error);
+      console.error('❌ FormService.adminSubmitForm 錯誤:', error);
       throw error;
     }
   }

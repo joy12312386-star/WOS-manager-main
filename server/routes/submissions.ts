@@ -10,8 +10,30 @@ router.post('/', authMiddleware, async (req: AuthRequest, res) => {
   try {
     const { fid, gameId, playerName, alliance, slots, eventDate } = req.body;
 
+    console.log('📥 收到報名請求:', {
+      userId: req.user!.id,
+      fid,
+      gameId,
+      playerName,
+      alliance,
+      eventDate,
+      slotsKeys: slots ? Object.keys(slots) : []
+    });
+
     if (!fid || !gameId || !playerName || !alliance || !slots) {
-      return res.status(400).json({ error: 'Missing required fields' });
+      return res.status(400).json({ 
+        error: 'Missing required fields: ' + 
+        (!fid ? 'fid ' : '') +
+        (!gameId ? 'gameId ' : '') +
+        (!playerName ? 'playerName ' : '') +
+        (!alliance ? 'alliance ' : '') +
+        (!slots ? 'slots' : '')
+      });
+    }
+
+    // 確保 slots 不為空
+    if (typeof slots !== 'object' || Object.keys(slots).length === 0) {
+      return res.status(400).json({ error: 'Slots cannot be empty' });
     }
 
     // 如果沒有提供 eventDate，嘗試獲取當前開放的場次
@@ -23,6 +45,8 @@ router.post('/', authMiddleware, async (req: AuthRequest, res) => {
         finalEventDate = openEvents[openEvents.length - 1].eventDate;
       }
     }
+
+    console.log('📝 最終事件日期:', finalEventDate);
 
     const submission = await SubmissionService.createSubmission(req.user!.id, {
       fid,
@@ -33,12 +57,15 @@ router.post('/', authMiddleware, async (req: AuthRequest, res) => {
       eventDate: finalEventDate,
     });
 
+    console.log('✅ 報名已保存，ID:', submission.id);
     res.status(201).json(submission);
   } catch (error: any) {
     // 如果是重複報名的錯誤，返回 400
     if (error.message?.includes('已經報名過')) {
+      console.warn('⚠️ 重複報名:', error.message);
       return res.status(400).json({ error: error.message });
     }
+    console.error('❌ 保存報名時出錯:', error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -48,8 +75,33 @@ router.post('/admin-submit', authMiddleware, adminMiddleware, async (req: AuthRe
   try {
     const { userId, fid, gameId, playerName, alliance, slots, eventDate } = req.body;
 
-    if (!userId || !fid || !gameId || !playerName || !alliance || !slots) {
-      return res.status(400).json({ error: 'Missing required fields' });
+    // 記錄收到的請求
+    console.log('📥 /admin-submit 收到請求:', {
+      userId,
+      fid,
+      gameId,
+      playerName,
+      alliance,
+      eventDate,
+      slotsCount: slots ? Object.keys(slots).length : 0
+    });
+
+    // 檢查必填字段
+    const missingFields = [];
+    if (!userId) missingFields.push('userId');
+    if (!fid) missingFields.push('fid');
+    if (!gameId) missingFields.push('gameId');
+    if (!playerName) missingFields.push('playerName');
+    if (!alliance) missingFields.push('alliance');
+    if (!slots) missingFields.push('slots');
+
+    if (missingFields.length > 0) {
+      return res.status(400).json({ error: `Missing required fields: ${missingFields.join(', ')}` });
+    }
+
+    // 驗證 slots 不為空
+    if (typeof slots !== 'object' || Object.keys(slots).length === 0) {
+      return res.status(400).json({ error: 'Slots cannot be empty' });
     }
 
     // 如果沒有提供 eventDate，嘗試獲取當前開放的場次
@@ -62,6 +114,8 @@ router.post('/admin-submit', authMiddleware, adminMiddleware, async (req: AuthRe
       }
     }
 
+    console.log('📝 最終事件日期:', finalEventDate);
+
     const submission = await SubmissionService.createSubmission(userId, {
       fid,
       gameId,
@@ -71,12 +125,15 @@ router.post('/admin-submit', authMiddleware, adminMiddleware, async (req: AuthRe
       eventDate: finalEventDate,
     });
 
+    console.log('✅ /admin-submit 報名已保存，ID:', submission.id);
     res.status(201).json(submission);
   } catch (error: any) {
     // 如果是重複報名的錯誤，返回 400
     if (error.message?.includes('已經報名過')) {
+      console.warn('⚠️  重複報名錯誤:', error.message);
       return res.status(400).json({ error: error.message });
     }
+    console.error('❌ /admin-submit 錯誤:', error);
     res.status(500).json({ error: error.message });
   }
 });
