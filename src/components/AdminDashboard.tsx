@@ -1286,9 +1286,20 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, curren
     const matchAlliance = !filterAlliance || submission.alliance === filterAlliance;
     
     // 報名管理表格：僅在有明確選擇場次時才進行場次篩選；否則顯示所有場次的報名
-    // 官職管理表格：由其他邏輯控制，這裡不干預
-    // 若提交的 eventDate 為 null，則總是顯示（向後兼容舊資料）
-    const matchEvent = !selectedEventForManagement || submission.eventDate === null || submission.eventDate === selectedEventForManagement.eventDate;
+    // 對於 eventDate 為 null 的舊資料（遷移資料），檢查提交時間是否在該場次報名開始之後
+    let matchEvent = !selectedEventForManagement;
+    if (selectedEventForManagement) {
+      if (submission.eventDate) {
+        // 新資料：eventDate 必須匹配
+        matchEvent = submission.eventDate === selectedEventForManagement.eventDate;
+      } else {
+        // 舊資料（eventDate 為 null）：檢查提交時間
+        // 如果提交時間在該場次報名開始之後，認為屬於此場次
+        const registrationStartTime = new Date(selectedEventForManagement.registrationStart).getTime();
+        const submittedTime = submission.submittedAt;
+        matchEvent = submittedTime >= registrationStartTime;
+      }
+    }
     
     // 根據管理員權限過濾：如果 managedAlliances 為 null/undefined 表示可管理所有；否則只能看到指定聯盟
     const matchManagedAlliances = !userManagedAlliances || userManagedAlliances.length === 0 || userManagedAlliances.includes(submission.alliance);
