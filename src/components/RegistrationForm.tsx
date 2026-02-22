@@ -1880,6 +1880,11 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ user, player
                                         setEditingSubmission(null);
                                         setSelectedSlots([]);
                                         setFormDate(event.eventDate);
+                                        // 清空表單資料以防止舊事件數據被帶入新事件
+                                        setFormData(prev => ({
+                                          ...prev,
+                                          slots: initializeSlots()
+                                        }));
                                         setSVSFormExpanded(true);
                                       }
                                     }}
@@ -1968,6 +1973,11 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ user, player
                                               setEditingSubmission(null);
                                               setSelectedSlots([]);
                                               setFormDate(event.eventDate);
+                                              // 清空表單資料以防止舊事件數據被帶入新事件
+                                              setFormData(prev => ({
+                                                ...prev,
+                                                slots: initializeSlots()
+                                              }));
                                               setSVSFormExpanded(true);
                                             }
                                           }}
