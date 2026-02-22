@@ -1692,8 +1692,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, curren
           <div className="bg-slate-800 rounded-lg border border-slate-700 p-4 sm:p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-slate-400 text-xs sm:text-sm">總報名數</p>
-                <p className="text-2xl sm:text-3xl font-bold text-white mt-1">{submissions.length}</p>
+                <p className="text-slate-400 text-xs sm:text-sm">{selectedEventForManagement ? `${selectedEventForManagement.eventDate} 報名數` : '總報名數'}</p>
+                <p className="text-2xl sm:text-3xl font-bold text-white mt-1">{filteredSubmissions.length}</p>
               </div>
               <FileText size={28} className="sm:w-8 sm:h-8 text-green-400 opacity-50" />
             </div>
@@ -2895,7 +2895,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, curren
                       ) : (
                         events.map(event => {
                           // 計算該場次的報名人數（包括舊資料 eventDate 為 null）
-                          const eventSubmissions = submissions.filter(s => s.eventDate === null || s.eventDate === event.eventDate);
+                          const eventSubmissions = submissions.filter(s => {
+                            if (s.eventDate === event.eventDate) return true;
+                            // 對於 eventDate 為 null 的舊資料，檢查提交時間是否在該場次報名開始之後
+                            if (s.eventDate === null) {
+                              const registrationStartTime = new Date(event.registrationStart).getTime();
+                              return s.submittedAt >= registrationStartTime;
+                            }
+                            return false;
+                          });
                           const startTimes = formatTimeWithTimezones(event.registrationStart, true);
                           const endTimes = formatTimeWithTimezones(event.registrationEnd, true);
                           return (
