@@ -885,11 +885,6 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ user, player
           return false;
         }
 
-        // 週五不強制填寫建築加速，其他日期強制填寫研究加速
-        if (day !== 'friday' && slot.researchAccel.days === 0 && slot.researchAccel.hours === 0 && slot.researchAccel.minutes === 0) {
-          addToast(`${day} 請填寫研究加速時間`, 'error');
-          return false;
-        }
         if (slot.timeSlots.some(ts => ts.start === undefined || ts.end === undefined)) {
           addToast(`${day} 請選擇完整的可接受時段`, 'error');
           return false;
