@@ -947,7 +947,8 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ user, player
       playerName: formData.playerName,
       alliance: formData.alliance,
       slots: cleanedSlots,
-      isEditing: !!editingId
+      isEditing: !!editingId,
+      eventDate: selectedEventDate || undefined
     });
     setShowConfirmModal(true);
   };
